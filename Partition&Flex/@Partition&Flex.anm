@@ -1,0 +1,363 @@
+--------------------------------------------------
+@オブジェクト配置
+--------------------------------------------------
+--track0:sizeX,0,3000,1280
+--track1:sizeY,0,3000,720
+--track2:grid(%),0,100,0
+--track3:seedAF(%),0,5000,0
+--dialog:個別対応/chk,local isIndv=1;個数(非個別),local objnums=5;変形(%),local changeAF=100;分割解像度,local resolution=100;間隔,local space=2;easing,local easing=23;seed,local seed=777;
+
+objnums = objnums or 8
+changeAF = changeAF / 100 or 1
+resolution = resolution or 100
+easing = easing or 1
+seed = seed or 777
+space = space or 0
+
+local E = require("easing_aviutl")
+
+----------------
+-- class definition
+----------------
+local Point = {}
+Point.new = function(x, y)
+    local o = {}
+    o.x = x
+    o.y = y
+    o.returnCoordinate = function(self)
+        return {self.x, self.y}
+    end
+    return o
+end
+local Area = {}
+Area.new = function(x1, y1, x2, y2)
+    return {
+        range = {
+            {x1, y1},
+            {x2, y2}
+        },
+        points = {
+            Point.new(x1, y1),
+            Point.new(x2, y1),
+            Point.new(x2, y2),
+            Point.new(x1, y2)
+        }
+    }
+end
+
+----------------
+local maxSeedAF = 50
+local sizeX, sizeY, gridAF, seedAF = obj.track0, obj.track1, obj.track2 / 100, obj.track3 / 100
+local range = Area.new(0, 0, sizeX, sizeY)
+local n = isIndv == 1 and obj.num or objnums
+-- lua 5.1のmath.logはeで底固定らしい
+-- local depth = math.ceil(math.log(n, 2))
+local depth = math.ceil(math.log(n) / math.log(2))
+local areas = {range}
+local dimention = 2
+local function axis(n)
+    return n % dimention
+end
+
+-- Partition the region based on the idea of kd-tree.
+local area_num = 1
+if obj.index == 0 then
+    for i = 0, depth - 1 do
+        local tmp = {}
+        local m = math.pow(2, i)
+
+        for j = m, 1, -1 do
+            if area_num < n then
+                local a = areas[j]
+                local min, max = a.range[1][axis(i) + 1], a.range[2][axis(i) + 1]
+                local partition = obj.rand(0, resolution, j, seed + i * maxSeedAF + math.floor(seedAF))
+                local partition_next = obj.rand(0, resolution, j, seed + i * maxSeedAF + math.floor(seedAF + 1))
+                local easedSeedAF =
+                    (E ~= nil and E.is_easing_type(easing)) and E.easing(easing, seedAF % 1, 0, 1, 1, 0, 1, 0) or
+                    seedAF % 1
+                partition = partition * (1 - easedSeedAF) + partition_next * easedSeedAF
+                partition = partition * (1 - gridAF) + 50 * gridAF
+                partition = (max - min) * partition / resolution + min
+
+                local x1min, x1max, x2min, x2max =
+                    unpack(
+                    axis(i) == 0 and {min, math.max(min, partition - space), math.min(space + partition, max), max} or
+                        {
+                            a.points[1].x,
+                            a.points[3].x,
+                            a.points[1].x,
+                            a.points[3].x
+                        }
+                )
+                local y1min, y1max, y2min, y2max =
+                    unpack(
+                    axis(i) == 1 and {min, math.max(min, partition - space), math.min(space + partition, max), max} or
+                        {
+                            a.points[1].y,
+                            a.points[3].y,
+                            a.points[1].y,
+                            a.points[3].y
+                        }
+                )
+                tmp[2 * (m - j + 1)] = Area.new(x1min, y1min, x1max, y1max)
+                tmp[2 * (m - j + 1) - 1] = Area.new(x2min, y2min, x2max, y2max)
+                area_num = area_num + 1
+            else
+                break
+            end
+        end
+        local numArea = #areas
+        -- #tmpは常に2の倍数
+        for j = #tmp, 1, -1 do
+            areas[(#tmp - j + 1) + (numArea - #tmp / 2)] = tmp[j]
+        end
+        -- print(i, areas[1])
+    end
+
+    if isIndv == 1 then
+        Aodaruma_PF_CalculatedArea = areas
+    end
+end
+
+----------------
+local z = 0
+local function drawpoly(area)
+    local a = area
+    local ps = a.points
+    local coords = {}
+    local x, y, w, h = obj.x, obj.y, obj.w, obj.h
+    local inicoords = {0, 0, z, w, 0, z, w, h, z, 0, h, z}
+    for i, p in ipairs(ps) do
+        -- linear affect
+        table.insert(
+            coords,
+            (p.x - sizeX / 2 - obj.ox) * changeAF + (inicoords[i * 3 - 2] - w / 2 + x) * (1 - changeAF)
+        )
+        table.insert(
+            coords,
+            (p.y - sizeY / 2 - obj.oy) * changeAF + (inicoords[i * 3 - 1] - h / 2 + y) * (1 - changeAF)
+        )
+        table.insert(coords, z)
+    end
+    return obj.drawpoly(unpack(coords))
+end
+
+-- drawing
+if isIndv == 1 then
+    local a = Aodaruma_PF_CalculatedArea
+    -- 一度tempbufferで読み込むことにより上下左右中央にオブジェクトが来るように再設定
+    obj.copybuffer("tmp", "obj")
+    obj.load("tempbuffer")
+    drawpoly(a[obj.index + 1])
+else
+    obj.copybuffer("tmp", "obj")
+    for i = 1, n do
+        obj.load("tempbuffer")
+        drawpoly(areas[i])
+    end
+end
+
+--[[
+    補完ありの分割はちゃんとアルゴリズム考えてから実装します。
+    ただ、めんどくさくてしばらく手を付けないかもしれません。
+]]
+--------------------------------------------------
+@オブジェクト分割 (補完なし)
+--------------------------------------------------
+--track0:分割数,0,32,2,1
+
+--track2:grid(%),0,100,0
+--track3:seedAF(%),0,5000,0
+--dialog:分割解像度,local resolution=100;easing,local easing=23;seed,local seed=777;
+
+resolution = resolution or 100
+easing = easing or 1
+seed = seed or 777
+local n,gridAF,seedAF = obj.track0,obj.track2/100,obj.track3/100
+
+local E = require("easing_aviutl")
+
+----------------
+-- class definition
+----------------
+local Point = {}
+Point.new = function(x, y)
+    local o = {}
+    o.x = x
+    o.y = y
+    o.returnCoordinate = function(self)
+        return {self.x, self.y}
+    end
+    return o
+end
+local Area = {}
+Area.new = function(x1, y1, x2, y2)
+    return {
+        range = {
+            {x1, y1},
+            {x2, y2}
+        },
+        points = {
+            Point.new(x1, y1),
+            Point.new(x2, y1),
+            Point.new(x2, y2),
+            Point.new(x1, y2)
+        }
+    }
+end
+
+----------------
+local maxSeedAF = 50
+local sizeX,sizeY = obj.getpixel()
+local range = Area.new(0, 0, sizeX, sizeY)
+
+local depth = n
+local areas = {range}
+local grided_areas = {range}
+local dimention = 2
+local function axis(n)
+    return n % dimention
+end
+local function sorting(t)
+    table.sort(t)
+    return t
+end
+
+-- Partition the region based on the idea of kd-tree.
+-- 基本的に分割システムは、一気に3つ分割し、端2つを続けて分割する以外は、「オブジェクト配置」と同じ
+for i = 0, depth - 1 do
+    local tmp,tmp2 = {},{}
+    local m = math.pow(3, i)
+
+    for j = 1, m do
+            local a = areas[j]
+            local min, max = a.range[1][axis(i) + 1], a.range[2][axis(i) + 1]
+            -- 3つに分割する
+            local partition = obj.rand(0, resolution/2, j, seed + i * maxSeedAF + math.floor(seedAF))
+            local partition_next = obj.rand(0, resolution/2, j, seed + i * maxSeedAF + math.floor(seedAF + 1))
+            local partition2 = obj.rand(resolution/2, resolution, j, seed + i * maxSeedAF + math.floor(seedAF) + n)
+            local partition2_next = obj.rand(resolution/2, resolution, j, seed + i * maxSeedAF + math.floor(seedAF + 1) + n)
+            
+            -- このままだとpartition > partition2の場合もあるため、改善
+            partition, partition2 = unpack(sorting({partition,partition2}))
+            partition_next, partition2_next = unpack(sorting({partition_next,partition2_next}))
+
+            local easedSeedAF =
+                (E ~= nil and E.is_easing_type(easing)) and E.easing(easing, seedAF % 1, 0, 1, 1, 0, 1, 0) or
+                seedAF % 1
+            partition = partition * (1 - easedSeedAF) + partition_next * easedSeedAF
+            partition = (max - min) * partition / resolution + min
+
+            partition2 = partition2 * (1 - easedSeedAF) + partition2_next * easedSeedAF
+            partition2 = (max - min) * partition2 / resolution + min
+
+            local x1min, x1max, x2min, x2max, x3min, x3max =
+                unpack(
+                axis(i) == 0 and {min, partition, partition, partition2, partition2, max} or
+                    {
+                        a.points[1].x,
+                        a.points[3].x,
+                        a.points[1].x,
+                        a.points[3].x,
+                        a.points[1].x,
+                        a.points[3].x
+                    }
+            )
+            local y1min, y1max, y2min, y2max, y3min, y3max =
+                unpack(
+                axis(i) == 1 and {min, partition, partition, partition2, partition2, max} or
+                    {
+                        a.points[1].y,
+                        a.points[3].y,
+                        a.points[1].y,
+                        a.points[3].y,
+                        a.points[1].y,
+                        a.points[3].y
+                    }
+            )
+            tmp[3 * j -2] = Area.new(x1min, y1min, x1max, y1max)
+            tmp[3 * j - 1] = Area.new(x2min, y2min, x2max, y2max)
+            tmp[3 * j] = Area.new(x3min, y3min, x3max, y3max)
+            
+            -- grided areas
+            local ga = grided_areas[j]
+            local gmin, gmax = ga.range[1][axis(i) + 1], ga.range[2][axis(i) + 1]
+            -- 3つに分割する
+            
+            local grided_partition = (max - min) * (1/3*100) / resolution + min
+            local grided_partition2 = (max - min) * 2/3*100 / resolution + min
+
+            local x1min, x1max, x2min, x2max, x3min, x3max =
+                unpack(
+                axis(i) == 0 and {min, grided_partition, grided_partition, grided_partition2, grided_partition2, max} or
+                    {
+                        ga.points[1].x,
+                        ga.points[3].x,
+                        ga.points[1].x,
+                        ga.points[3].x,
+                        ga.points[1].x,
+                        ga.points[3].x
+                    }
+            )
+            local y1min, y1max, y2min, y2max, y3min, y3max =
+                unpack(
+                axis(i) == 1 and {min, grided_partition, grided_partition, grided_partition2, grided_partition2, max} or
+                    {
+                        ga.points[1].y,
+                        ga.points[3].y,
+                        ga.points[1].y,
+                        ga.points[3].y,
+                        ga.points[1].y,
+                        ga.points[3].y
+                    }
+            )
+            tmp2[3 * j - 2] = Area.new(x1min, y1min, x1max, y1max)
+            tmp2[3 * j - 1] = Area.new(x2min, y2min, x2max, y2max)
+            tmp2[3 * j] = Area.new(x3min, y3min, x3max, y3max)
+    end
+    areas = tmp
+    grided_areas = tmp2
+end
+
+----------------
+local z = 0
+local function drawpoly(area, grided_area)
+    local a,ga = area,grided_area
+    local ps,gps = a.points,ga.points
+    local coords = {}
+    for i, p in ipairs(ps) do
+        -- linear affect
+        table.insert(
+            coords,
+            (p.x*(1-gridAF) + (gps[i].x) * gridAF)- sizeX / 2
+        )
+        table.insert(
+            coords,
+            (p.y*(1-gridAF) + (gps[i].y) * gridAF)- sizeY / 2
+        )
+        table.insert(coords, z)
+    end
+    for i, gp in ipairs(gps) do
+        -- linear affect
+        table.insert(
+            coords,
+            gp.x
+        )
+        table.insert(
+            coords,
+            gp.y
+        )
+    end
+    return obj.drawpoly(unpack(coords))
+end
+
+--drawing
+obj.copybuffer("cache:AODARUMA_PF_OBJD", "obj")
+obj.setoption("dst","tmp",obj.getpixel())
+obj.setoption("blend",4)
+for i = 1, math.pow(3,n) do
+    obj.copybuffer("obj","cache:AODARUMA_PF_OBJD")
+    drawpoly(areas[i],grided_areas[i])
+end
+obj.setoption("dst","frm")
+obj.load("tempbuffer")
