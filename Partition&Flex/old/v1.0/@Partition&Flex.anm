@@ -1,5 +1,5 @@
 --[[
-This script is version 1.1. If it is outdated, please replace it with a newer script.
+This script is version 1.0. If it is outdated, please replace it with a newer script.
 We are not responsible for any damage caused by the use of this script.
 
 developed by Aodaruma (@Aodaruma_)
@@ -361,7 +361,7 @@ end
 --drawing
 obj.copybuffer("cache:AODARUMA_PF_OBJD", "obj")
 obj.setoption("dst","tmp",obj.getpixel())
-obj.setoption("blend","alpha_add")
+obj.setoption("blend",4)
 for i = 1, math.pow(3,n) do
     obj.copybuffer("obj","cache:AODARUMA_PF_OBJD")
     drawpoly(areas[i],grided_areas[i])

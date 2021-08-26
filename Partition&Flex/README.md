@@ -2,7 +2,7 @@
 
 kd木みたいに変形して配置したり、オブジェクト自体を分割して変形させたりするスクリプトです。
 
-現在は **version 1.0** が最新です。
+現在は **version 1.1** が最新です。
 
 ![thumbnail](https://github.com/Aodaruma/Aodaruma-AviUtl-Script/blob/main/Partition%26Flex/partiotionFlexThumbnail.png)
 
