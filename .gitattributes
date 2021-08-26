@@ -1,2 +1,8 @@
 # Auto detect text files and perform LF normalization
 * text=auto
+
+# restrict CRLF on .anm/.obj/.tra/.cam
+*.anm text eol=crlf
+*.obj text eol=crlf
+*.tra text eol=crlf
+*.cam text eol=crlf
