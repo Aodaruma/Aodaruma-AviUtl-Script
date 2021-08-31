@@ -1,5 +1,5 @@
 --[[
-This script is version 1.2. If it is outdated, please replace it with a newer script.
+This script is version 1.21. If it is outdated, please replace it with a newer script.
 We are not responsible for any damage caused by the use of this script.
 
 developed by Aodaruma (@Aodaruma_)
@@ -21,9 +21,10 @@ easing = easing or 1
 seed = seed or 777
 space = space or 0
 
-package.cpath=package.cpath..";"..obj.getinfo"script_path":match"(.*\\).*\\".."?.dll"
-package.cpath=package.cpath..";"..obj.getinfo"script_path":gsub("[^\\]+\\$","?.dll")
-local E = require("easing_aviutl")
+local status, E = pcall(require, "easing_aviutl")
+if not status then
+    E = nil
+end
 
 ----------------
 -- class definition
@@ -184,9 +185,10 @@ easing = easing or 1
 seed = seed or 777
 local n,gridAF,seedAF = obj.track0,obj.track2/100,obj.track3/100
 
-package.cpath=package.cpath..";"..obj.getinfo"script_path":match"(.*\\).*\\".."?.dll"
-package.cpath=package.cpath..";"..obj.getinfo"script_path":gsub("[^\\]+\\$","?.dll")
-local E = require("easing_aviutl")
+local status, E = pcall(require, "easing_aviutl")
+if not status then
+    E = nil
+end
 
 ----------------
 -- class definition
