@@ -1,0 +1,104 @@
+--[[
+This script is version 0.1. If it is outdated, please replace it with a newer script.
+We are not responsible for any damage caused by the use of this script.
+
+developed by Aodaruma (@Aodaruma_)
+]]
+--track1:ｴｯｼﾞﾀｲﾌﾟ,1,4,1,1
+--track2:補間ﾀｲﾌﾟ,0,5,0,1
+--track3:ｷｬｯｼｭ保存,0,1,1,1
+--file:""
+
+local DEBUG = true
+
+local status1 = pcall(require, "imageLoader")
+local L
+if status1 then
+    L = imageLoader
+end
+
+local status2, R = pcall(require, "rikky_module")
+if not status2 then
+    R = nil
+end
+if rikky_module then
+    R = rikky_module
+end
+
+local function file_exists(name)
+    local f = io.open(name, "r")
+    if f ~= nil then
+        io.close(f)
+        return true
+    else
+        return false
+    end
+end
+
+local function logger(s)
+    if DEBUG then
+        print(s)
+    end
+end
+
+local function printInDisplay(s)
+    obj.setfont("メイリオ", 50)
+    obj.load("<s30>ImageLoader, at layer" .. obj.layer .. ";\n<s>" .. s)
+end
+
+function drawing()
+    logger("draw function called!")
+    local edge_type, filter_type = obj.track1, obj.track2
+    local sw, sh = obj.getinfo("image_max")
+    local w, h = obj.getpixel()
+    -- obj.setoption("dst", "tmp", sw, sh)
+    obj.effect("領域拡張", "右", sw - w, "下", sh - h)
+    local data, w, h = obj.getpixeldata("work")
+    local rw, rh = L.main(data, file, w, h, filter_type, edge_type)
+    obj.putpixeldata(data)
+    obj.effect("クリッピング", "右", w - rw, "下", h - rh, "中央の位置を変更", 1)
+end
+
+if L then
+    local is_cache_saving = obj.track3 == 1
+    local idx = "AODARUMA_IM_" .. obj.layer
+    logger('will saving at "' .. idx .. '"')
+
+    if file ~= nil and file_exists(file) then
+        if is_cache_saving then
+            logger("cache is saving!")
+            if R then
+                logger("using rikky_module...")
+                if not R.image("r", idx) then
+                    logger("not saved image at idx, so saving now!")
+                    drawing()
+                    if not R.image("w", idx) then
+                        logger("couldn't saved successfully on rikky_module.image... plz check it")
+                    end
+                    R.image("r", idx)
+                end
+            else
+                logger("using copybuffer...")
+                drawing()
+                obj.copybuffer("cache:" .. idx)
+            end
+        else
+            logger("cache is not saving now!")
+            drawing()
+            if R then
+                logger("clearing idx...")
+                R.image("c", idx)
+            -- local savedImages = R.image("g+")
+            -- for _, v in ipairs(savedImages) do
+            --     if v == idx then
+            --         R.image("c", idx)
+            --     end
+            -- end
+            end
+        end
+    elseif file ~= "" then
+        printInDisplay("指定されたファイルが見つかりませんでした。")
+    else
+        printInDisplay("ファイルを指定してください。")
+    end
+end
