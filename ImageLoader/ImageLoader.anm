@@ -61,7 +61,7 @@ end
 
 if L then
     local is_cache_saving = obj.track3 == 1
-    local idx = "AODARUMA_IM_" .. obj.layer
+    local idx = "AODARUMA_IM_" .. obj.layer .. "_" .. file:match("^.+/(.+)$")
     logger('will saving at "' .. idx .. '"')
 
     if file ~= nil and file_exists(file) then
