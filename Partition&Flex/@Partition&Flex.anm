@@ -1,5 +1,5 @@
 --[[
-This script is version 1.21. If it is outdated, please replace it with a newer script.
+This script is version 1.22. If it is outdated, please replace it with a newer script.
 We are not responsible for any damage caused by the use of this script.
 
 developed by Aodaruma (@Aodaruma_)
@@ -12,7 +12,7 @@ developed by Aodaruma (@Aodaruma_)
 --track1:sizeY,0,3000,720
 --track2:grid(%),0,100,0
 --track3:seedAF(%),0,5000,0
---dialog:個別対応/chk,local isIndv=1;個数(非個別),local objnums=5;変形(%),local changeAF=100;分割解像度,local resolution=100;間隔,local space=2;easing,local easing=23;seed,local seed=777;
+--dialog:個別対応/chk,local isIndv=1;個数(非個別),local objnums=5;変形(%),local changeAF=100;分割解像度,local resolution=100;間隔,local space=2;easing,local easing=23;order,local order=0;seed,local seed=777;
 
 objnums = objnums or 8
 changeAF = changeAF / 100 or 1
@@ -20,12 +20,24 @@ resolution = resolution or 100
 easing = easing or 1
 seed = seed or 777
 space = space or 0
+order = order or 0
 
 local status, E = pcall(require, "easing_aviutl")
 if not status then
     E = nil
 end
 
+----------------
+-- function definition
+----------------
+local function show_message(s)
+    obj.setfont("メイリオ",200)
+    obj.load(s)
+end
+
+local function sorting_area()
+    -- body
+end
 ----------------
 -- class definition
 ----------------
@@ -63,15 +75,16 @@ local n = isIndv == 1 and obj.num or objnums
 -- lua 5.1のmath.logはeで底固定らしい
 -- local depth = math.ceil(math.log(n, 2))
 local depth = math.ceil(math.log(n) / math.log(2))
-local areas = {range}
+local areas,grided_areas = {range},{range}
 local dimention = 2
 local function axis(n)
     return n % dimention
 end
 
 -- Partition the region based on the idea of kd-tree.
-local area_num = 1
 if obj.index == 0 then
+    -- calculation of partition area
+    local area_num = 1
     for i = 0, depth - 1 do
         local tmp = {}
         local m = math.pow(2, i)
@@ -86,7 +99,7 @@ if obj.index == 0 then
                     (E ~= nil and E.is_easing_type(easing)) and E.easing(easing, seedAF % 1, 0, 1, 1, 0, 1, 0) or
                     seedAF % 1
                 partition = partition * (1 - easedSeedAF) + partition_next * easedSeedAF
-                partition = partition * (1 - gridAF) + 50 * gridAF
+                partition = partition * (1 - gridAF) + resolution/2 * gridAF
                 partition = (max - min) * partition / resolution + min
 
                 local x1min, x1max, x2min, x2max =
@@ -124,7 +137,79 @@ if obj.index == 0 then
         -- print(i, areas[1])
     end
 
+    
+    -- calcuration of grided area
+    area_num = 1
+    for i = 0, depth - 1 do
+        local tmp = {}
+        local m = math.pow(2, i)
+
+        for j = m, 1, -1 do
+            if area_num < n then
+                local a = grided_areas[j]
+                local min, max = a.range[1][axis(i) + 1], a.range[2][axis(i) + 1]
+                local partition = (max - min) * 0.5 + min
+
+                local x1min, x1max, x2min, x2max =
+                    unpack(
+                    axis(i) == 0 and {min, math.max(min, partition - space), math.min(space + partition, max), max} or
+                        {
+                            a.points[1].x,
+                            a.points[3].x,
+                            a.points[1].x,
+                            a.points[3].x
+                        }
+                )
+                local y1min, y1max, y2min, y2max =
+                    unpack(
+                    axis(i) == 1 and {min, math.max(min, partition - space), math.min(space + partition, max), max} or
+                        {
+                            a.points[1].y,
+                            a.points[3].y,
+                            a.points[1].y,
+                            a.points[3].y
+                        }
+                )
+                tmp[2 * (m - j + 1)] = Area.new(x1min, y1min, x1max, y1max)
+                tmp[2 * (m - j + 1) - 1] = Area.new(x2min, y2min, x2max, y2max)
+                area_num = area_num + 1
+            else
+                break
+            end
+        end
+        local numArea = #grided_areas
+        -- #tmpは常に2の倍数
+        for j = #tmp, 1, -1 do
+            grided_areas[(#tmp - j + 1) + (numArea - #tmp / 2)] = tmp[j]
+        end
+        -- print(i, grided_areas[1])
+    end
+
     if isIndv == 1 then
+        for i=1,#grided_areas do
+            grided_areas[i]["old_index"] = i
+        end
+        if order == 1 then
+            table.sort(
+                grided_areas,
+                function(a,b)
+                    return a.points[1].y == b.points[1].y and a.points[1].x < b.points[1].x or a.points[1].y < b.points[1].y
+                end
+                )
+        elseif order == 2 then
+            table.sort(
+                grided_areas,
+                function(a,b)
+                    return a.points[1].x == b.points[1].x and a.points[1].y < b.points[1].y or a.points[1].x < b.points[1].x
+                end
+                )
+        end
+        Aodaruma_PF_AreaIndex = {}
+        for i, v in ipairs(grided_areas) do
+            table.insert( Aodaruma_PF_AreaIndex, v["old_index"] )
+        end
+        print("Aodaruma_PF_AreaIndex: "..#Aodaruma_PF_AreaIndex)
+
         Aodaruma_PF_CalculatedArea = areas
     end
 end
@@ -158,7 +243,36 @@ if isIndv == 1 then
     -- 一度tempbufferで読み込むことにより上下左右中央にオブジェクトが来るように再設定
     obj.copybuffer("tmp", "obj")
     obj.load("tempbuffer")
-    drawpoly(a[obj.index + 1])
+    
+    local index
+    if type(order) == "number" and 1 <= order and order <= 2 and Aodaruma_PF_AreaIndex then
+        index = Aodaruma_PF_AreaIndex[obj.index+1]
+        print("index: "..index)
+    elseif type(order) == "table" then
+        local i = obj.index+1
+        if i <= #order and type(order[i]) == "number" and (0 <= order[i] and order[i] <= obj.num) then
+            index = math.floor(order[i])
+        else
+            index = obj.index + 1
+        end
+    elseif type(order) == "string" then
+        if order == "r" then
+            if obj.index == 0 then
+                Aodaruma_PF_Random = {}
+                for i=1,obj.num do
+                    table.insert( Aodaruma_PF_Random,i )
+                end
+            end
+
+            local i = table.remove( Aodaruma_PF_Random, obj.rand(1, obj.num-obj.index, seed, 0) )
+            index = i
+        else
+            index = obj.index + 1
+        end
+    else -- order == 0 or someelse
+        index = obj.index + 1
+    end
+    drawpoly(a[index])
 else
     obj.copybuffer("tmp", "obj")
     for i = 1, n do
