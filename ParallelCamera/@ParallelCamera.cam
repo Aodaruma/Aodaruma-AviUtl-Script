@@ -1,0 +1,67 @@
+--[[
+This script is version 1.11. If it is outdated, please replace it with a newer script.
+We are not responsible for any damage caused by the use of this script.
+
+developed by Aodaruma (@Aodaruma_)
+]]--
+--------------------------------------------------
+@ParallelCamera
+--------------------------------------------------
+--track0:視線和,0,5000,1024
+--track1:カメラ縦転,-1280,1280,0,0.01
+--track2:カメラ横転,-1280,1280,0,0.01
+--check0:カメラ座標出力,0
+--dialog:カメラ情報表示/chk,local info=0;カメラ平行視線先pos,local ctPos={};Parallel(On)/chk,local isParallel=1;Z視線和/chk,local isTz=1;
+
+local focasZ=obj.track0
+ctUD=obj.track1/100
+ctLR=(obj.track2+157)/100
+local isMemory=obj.check0
+local tmp={}
+local tmp2=""
+local layer=obj.layer
+local cam=obj.getoption("camera_param")
+
+
+if(isParallel==1) then
+	--平行移動
+	cam.tx=cam.x+(focasZ*math.cos(ctLR)*math.cos(ctUD))+cam.tx
+	cam.ty=cam.y+(focasZ*math.sin(ctUD))+cam.ty
+	cam.tz=cam.z+(focasZ*math.cos(ctUD)*math.sin(ctLR))+cam.tz
+
+	if(isTz==0) then
+		cam.tx=cam.x+cam.tx
+		cam.ty=cam.y+cam.ty
+		cam.tz=cam.z+cam.tz+focasZ
+	end
+
+	--座標出力
+	if(isMemory==true) then
+		if(PC==nil) then PC={} end
+		PC["layer"..layer]={cam.x, cam.y, cam.z, cam.tx, cam.ty, cam.tz}
+	end
+
+	--情報表示
+	if(info==1) then
+		if(PCi==nil) then PCi={} end
+		if(isTz==0) then
+			tmp2="notSet"
+		else
+			tmp2=focasZ
+		end
+		if(PCi[layer]==nil) then PCi[layer]={} end
+		PCi[layer]={math.floor(cam.x),math.floor(cam.y),math.floor(cam.z),
+				math.floor(cam.tx),math.floor(cam.ty),math.floor(cam.tz),
+				math.floor(ctUD),math.floor(ctLR),focasZ}
+	end
+	obj.setoption("camera_param",cam)
+end
+--------------------------------------------------
+@ParallelCam(簡易)
+--------------------------------------------------
+--track0:視線和,0,5000,1024
+local cam=obj.getoption("camera_param")
+cam.tx=cam.x+cam.tx
+cam.ty=cam.y+cam.ty
+cam.tz=cam.z+obj.track0+cam.tz
+obj.setoption("camera_param",cam)
