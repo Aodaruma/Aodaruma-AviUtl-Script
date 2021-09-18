@@ -1,0 +1,75 @@
+--[[
+This script is version 1.11. If it is outdated, please replace it with a newer script.
+We are not responsible for any damage caused by the use of this script.
+
+developed by Aodaruma (@Aodaruma_)
+]]--
+
+--------------------------------------------------
+@カメラ視線に同期
+--------------------------------------------------
+--track0:変換度%,0,300,100
+--track1:ずれX,-3000,3000,0,0.01
+--track2:ずれY,-3000,3000,0,0.01
+--track3:ずれZ,-5000,5000,0,0.01
+--check0:表示,1
+--dialog:Seed,local seed=333;カメラの方向を向く/chk,local isToCamera=1;回転ランダム,local angleRand=10;シャドーから対象外にする/chk,local isInvalidShadow=1;座標を加算/chk,local idObj=0;複数obj対応/chk,local isMulti=1;
+
+local disX, disY, disZ=obj.track1, obj.track2, obj.track3
+local cam=obj.getoption("camera_param")
+local af=obj.track0/100
+local uf=1-af
+local vX, vY, vZ=0
+
+if(obj.check0) then
+if(idObj==1) then
+vX, vY, vZ=obj.ox, obj.oy, obj.oz
+end
+if(isMulti==1 and obj.num>1) then
+obj.ox=cam.tx*af+obj.ox*uf+obj.rand(-1000,1000,seed,1)*disX*af/100+obj.ox+vX
+else
+obj.ox=cam.tx*af+obj.ox*uf+obj.rand(-1000,1000,seed,1)*disX*af/100+vX
+end
+obj.oy=cam.ty*af+obj.oy*uf+obj.rand(-1000,1000,seed,1)*disY*af/100+vY
+obj.oz=cam.tz*af+obj.oz*uf+obj.rand(-1000,1000,seed,1)*disZ*af/100+vZ
+
+if(isInvalidShadow==1) then obj.setoption("shadow",0) end
+if(isToCamera==1) then
+obj.setoption("billboard",3)
+else
+obj.rx=obj.getvalue("rx")*uf+obj.rand(-1280,1280,seed,1)*angleRand*af
+obj.ry=obj.getvalue("ry")*uf+obj.rand(-1280,1280,seed,1)*angleRand*af
+obj.rz=obj.getvalue("rz")*uf+obj.rand(-1280,1280,seed,1)*angleRand*af
+end
+end
+
+--------------------------------------------------
+@情報表示
+--------------------------------------------------
+--track0:表示,0,1,1,1
+--track1:fontsize,0,800,100
+--track2:CLayer,1,100,1,1
+
+local cam=obj.getoption("camera_param")
+local size=obj.track1
+local disp=""
+local la=obj.track2
+
+obj.setfont("メイリオ",size)
+if(PCi[la]==nil) then
+obj.load("そのレイヤーにはカメラ制御、\nまたは情報表示にチェックがされていません。")
+else
+disp="ParallelCamera\ncamX:"..tostring(PCi[la][1])..", camY:"..tostring(PCi[la][2])..", camZ:"..tostring(PCi[la][3]).."\n"
+.."cam視線X:"..tostring(PCi[la][4])..", cam視線Y:"..tostring(PCi[la][5]).."cam視線Z:"..tostring(PCi[la][6]).."\ncam視線和:"..tostring(PCi[la][7])
+
+obj.load(disp)
+end
+
+
+obj.effect()
+obj.ox=cam.tx
+obj.oy=cam.ty
+obj.oz=cam.tz
+obj.rz, obj.ry, obj.oz=0
+obj.cx, obj.cy, obj.cz=0
+obj.setoption("blend",0)
