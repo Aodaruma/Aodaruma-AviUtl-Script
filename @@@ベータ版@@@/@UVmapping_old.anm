@@ -1,0 +1,107 @@
+--[[
+
+v1.0
+
+なぜdllで作らなかったのか...
+
+AEのRe:MapプラグインみたいなUVmappingを実現するスクリプトです。
+ただしマップのキーはRGBではなくYCaCbです。
+
+dll一切使ってないので、かなり重いです。
+下手すれば前のpixel sortよりも重たい可能性があります。
+俺のマイスイートPCはCPUゴリラだぜという以外の方は、DLLバージョンが出るまであまりお勧めはできません。
+
+簡単な使い方だけ記しておきます。
+
+------------------------------
+- layer:
+	Mapレイヤーを選択します。-1で直前のレイヤー、0で現在のレイヤー、そのほかの数字はレイヤー数で指定されます。
+- type:
+	1でca,cbがそれぞれx,y、2でca,cbがそれぞれy,xに対応されます。
+- Angle:
+	ピクセル角度が指定できます
+- AF(%):
+	元のピクセルの位置と変化ピクセルの位置の補間を行います。
+------------------------------
+
+質問、バグの発見及び提案に関しては私のTwitterまで連絡よろしくお願いいたします。
+
+version:
+v1.0: 
+	作成
+
+Last Edit: 21:02 2018/09/20
+
+Developed by Aodaruma
+twitter: @Aodaruma_
+]]
+
+--------------------------------------------------------------------------------
+@Map
+--------------------------------------------------------------------------------
+--check0:run,0
+
+-- pcall(require,"rikky_module")
+
+if obj.check0 then
+	obj.load("framebuffer")
+	local w,h=obj.getpixel()
+	for i=1,w do
+		for j=1,h do
+			local y,ca,cb,a = obj.getpixel(i,j,"type","yc")
+			y,ca,cb = 2048,i-w/2,j-h/2,
+			obj.pixeloption("type","yc")
+			obj.putpixel(i,j,y,ca,cb,a)
+		end
+	end
+end
+
+
+--------------------------------------------------------------------------------
+@Main
+--------------------------------------------------------------------------------
+--track0:layer,-1,100,-1,1
+--track1:type,1,2,1,1
+--track2:Angle,-720,720,0
+--track3:AF(%),0,100,100
+--check0:MAPのフィルタを反映,0
+
+-- pcall(require,"rikky_module")
+local l,t,ang,af = obj.track0,obj.track1-1,obj.track2,obj.track3/100
+local uf = 1-af
+local MT={}
+local function log(s) return debug_print(s) end
+local sin,cos =
+	function (t) return math.sin(t/180*math.pi) end,
+	function (t) return math.cos(t/180*math.pi) end
+
+local w,h = obj.getpixel()
+obj.copybuffer("cache:UVM","obj")
+
+l = l==-1 and obj.layer-1 or (l==0 and obj.layer or l)
+obj.load("layer",l,obj.check0)
+local mw,mh = obj.getpixel()
+for i=1,mw do
+	MT[i] = {}
+	for j=1,mh do
+		local y,ca,cb,a = obj.getpixel(i,j,"type","yc")
+		MT[i][j] = {ca,cb}
+	end
+end
+
+obj.copybuffer("obj","cache:UVM")
+local dw,dh = (mw-w)/2, (mh-h)/2
+for i=dw+1,w-dw do
+	for j=dh+1,h-dh do
+		local mc = MT[i][j]
+		local mx,my =
+			mc[1]+w/2, mc[2]+h/2
+		mx,my =
+			mx*cos(ang)-my*sin(ang),
+			mx*sin(ang)+my*cos(ang)
+		if t==2 then mx,my = my,mx end
+
+		local col,a = obj.getpixel(math.floor(mx*af +i*uf),math.floor(my*af +j*uf))
+		obj.putpixel(i,j,col,a)
+	end
+end

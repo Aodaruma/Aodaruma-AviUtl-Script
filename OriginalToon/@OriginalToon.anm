@@ -1,0 +1,368 @@
+--[[
+
+事前にオリジナルのパターンを用意し、輝度に応じてトゥーン切り抜きを行うみたいなスクリプトです。
+いわゆる漫画化スクリプトの拡張版みたいなものです。
+
+基本的になくても動作しますが、rikky_moduleの最新バージョンがあると結構便利です。
+◆◆◆  簡単な機能説明 ◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆
+
+- SaveToon
+	切り抜くトゥーンを保存します。
+	原則Mainにかけるオブジェクトと同じサイズかそれ以上にしてください。
+	もし小さいときは、自動的に拡大されます。ご注意ください。
+
+	classNumで、トゥーンのグループの指定を
+	toonNumで、トゥーンの順番を指定します。
+	チェックボックスを入れると、保存されます(透明化はされません)。
+
+- Main
+	保存したトゥーンを適用します。
+	classNumで、トゥーンのグループの指定を
+	Areasで、toonNumで保存されたものから順に指定していきます。
+
+	showBarでどの程度適用するかの、バーグラフを表示します。
+	もし、rikky_moduleが正常に読み込めたら、少しだけ便利になります:
+		[1] BarSizeで値変更時に、アンカーも自動的に拡大縮小されます。
+		[2] Resetの時に、各アンカーがバーを等分するようになります。
+		[3]	Areaで値変更時に、アンカーが自動的にリセットされます。
+
+	基本的に、アンカーを操作して適用する輝度を設定します。
+	もし一部のトゥーンが保存されていなければ、バーグラフにはその部分だけ「missing」と表示されます。
+
+◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆
+
+質問、バグの発見及び提案に関しては私のTwitterまで連絡よろしくお願いいたします。
+
+version:
+v1.0: 
+	作成
+
+Last Edit: 3:41 2018/09/24
+
+Developed by Aodaruma
+twitter: @Aodaruma_
+]]
+
+--------------------------------------------------------------
+@SaveToon
+--------------------------------------------------------------
+--track0:classNum,1,100,1,1
+--track1:toonNum,1,30,1,1
+--check0:save,0
+
+require("rikky_module")
+local n,m=obj.track0,obj.track1
+if obj.check0 then
+	if rikky_module then
+		return rikky_module.image("w",string.format("OT%s", (n-1)*30+m))
+	else
+		return obj.copybuffer(string.format("OT%s", (n-1)*30+m),"obj")
+	end
+end
+--------------------------------------------------------------
+@Main
+--------------------------------------------------------------
+--track0:classNum,1,100,1,1
+--track1:Areas,2,30,5,1
+--track2:BarSize,300,1024,500
+--track3:Reset(1),0,1,0,1
+--check0:showBar,0
+--dialog:ぼかし,local blur=0;---,bp={-150,0,-50,0,50,0,150,0};
+
+-->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+
+
+
+local palette = {
+	{back=0x192933,rback=0x130909,title=0x2e86ab,sub=0x2e382e,pt={0xe81e63,0x2195f2,0x8ac24a,0xfe5722,0x00bbd3,0xccdb39,0xfec007,0xff0048}},
+}
+
+-->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+-------------------------------------------------- DEFINES --------------------------------------------------
+require("rikky_module")
+pcall(require,"Aodaruma")
+local c,a,s,isreset	= obj.track0,obj.track1,obj.track2/2,obj.track3
+local isShowBar		= obj.check0
+local N,size 		= a-1,s*2
+local w,h 			= obj.getpixel()
+OT							= OT or {}
+OT.isReseted				= OT.isReseted or {}
+OT.isReseted[obj.layer]		= OT.isReseted[obj.layer]==nil and true or false
+OT.beforeSize				= OT.beforeSize or {}
+OT.beforeSize[obj.layer]	= OT.beforeSize[obj.layer] or size
+OT.beforeAreas				= OT.beforeAreas or {}
+OT.beforeAreas[obj.layer]	= OT.beforeAreas[obj.layer] or a
+
+blur				= blur or 0
+-------------------------------------------------- FUNCTIONS 
+local function setLinear(d0,d1,at,t)
+	return (d1-d0)/(at+1)*t+d0
+end
+
+local function floor(n)
+	return math.floor(n)
+end
+
+local function putSquarePoly(alpha,x0,y0,x1,y1,u0,v0,u1,v1)
+	if type(x0)~="number" or type(y0)~="number" then
+		if Aodaruma then
+			Aodaruma.throwError("fatal","there is no argments at x0 or y0","putSquarePoly",3)
+		else
+			error("there is no argments at x0 or y0",3)
+		end
+	end
+
+	alpha = alpha or 1
+	x1 = x1 or -x0
+	y1 = y1 or -y0
+	u0 = u0 or 1
+	v0 = v0 or 1
+	u1 = u1 or -u0
+	v1 = v1 or -v0
+
+	obj.drawpoly(
+		x0,y0,0,
+		x1,y0,0,
+		x1,y1,0,
+		x0,y1,0,
+		u0,v0,
+		u1,v0,
+		u1,v1,
+		u0,v1,
+		alpha
+	)
+end
+
+local function readImages(c,t)
+	if rikky_module then
+		return rikky_module.image("r",string.format("OT%s",(c-1)*30+t))
+	else
+		return obj.copybuffer("obj",string.format("OT%s",(c-1)*30+t))
+	end
+end
+
+-- local function getImagesInfo(c,t)
+-- 	rikky_module.image("i",string.format("OT%s",(c-1)*30+t))
+-- end
+
+local function polyline(p0, p1, width, color, alpha) --93さんのブロマガより引用
+	local g=obj.getvalue
+	local w,h=0,0
+	if color then
+		obj.load("figure","四角形",color,1)
+	else
+		w,h=obj.getpixel()
+	end
+	alpha = alpha or 1
+	width = width or 1
+	local c = obj.getoption("camera_param")
+	local a = {p1[1]-p0[1], p1[2]-p0[2], p1[3]-p0[3]}
+	local b = {c.x-p0[1], c.y-p0[2], c.z-p0[3]}
+	local n = {a[2]*b[3]-a[3]*b[2],a[3]*b[1]-a[1]*b[3],a[1]*b[2]-a[2]*b[1]}
+	local l = math.sqrt(n[1]*n[1] + n[2]*n[2] + n[3]*n[3])
+	local nx,ny,nz = (n[1]/l)*width*.5, (n[2]/l)*width*.5 ,(n[3]/l)*width*.5
+	local x0,y0,z0 = p0[1]-nx,p0[2]-ny,p0[3]-nz
+	local x1,y1,z1 = p1[1]-nx,p1[2]-ny,p1[3]-nz
+	local x2,y2,z2 = p1[1]+nx,p1[2]+ny,p1[3]+nz
+	local x3,y3,z3 = p0[1]+nx,p0[2]+ny,p0[3]+nz
+	obj.drawpoly(x0,y0,z0, x1,y1,z1, x2,y2,z2, x3,y3,z3,0,0,w,0,w,h,0,h,alpha)
+end
+
+local function log(s)
+	if type(s)~="string" then
+		return debug_print(tostring(s))
+	else
+		return debug_print(s)
+	end
+end
+-------------------------------------------------- RESET & MODIFY --------------------------------------------------
+if isShowBar then
+	bp = bp or {-size,200,size,200}
+	if (isreset==1 or OT.beforeAreas[obj.layer]~=a) and rikky_module then
+		local tmp = {}
+		for i=1,(N) do
+			tmp[i*2-1]	= setLinear(-size,size,N,i)
+			tmp[i*2]	= 200
+		end
+		if (#tmp == (N)*2) then
+			rikky_module.setdialogparam("bp",tmp)
+		end
+		OT.isReseted[obj.layer] = true
+		OT.beforeAreas[obj.layer] = a
+		-- log("reseted")
+	end
+
+	if OT.beforeSize[obj.layer]~=size and rikky_module then
+		local tmp = {}
+		local k = size/OT.beforeSize[obj.layer]
+		for i=1,(N) do
+			tmp[i*2-1]	= bp[i*2-1]*k
+			tmp[i*2]	= bp[i*2]
+		end
+		if (#tmp == (N)*2) then
+			rikky_module.setdialogparam("bp",tmp)
+		end
+		OT.beforeSize[obj.layer] = size
+		-- log("resized")
+	end
+
+	obj.setanchor("bp",N,"line")
+end
+
+obj.copybuffer("cache:OT:bg","obj")
+-------------------------------------------------- DRAW --------------------------------------------------
+for i=0,#bp/2 do
+	obj.setoption("dst","tmp",obj.w,obj.h)
+	-- if not isShowBar then
+		obj.setoption("dst","tmp")
+		readImages(c,i+1)
+		local mw,mh = obj.getpixel()
+		if mw<w then obj.effect("リサイズ","X",w,"ドット数でサイズ指定",1) end
+		if mh<h then obj.effect("リサイズ","Y",h,"ドット数でサイズ指定",1) end
+		obj.draw()
+	-- end
+
+--////////////////////
+local d0,d1 =
+		i==0 	 and -size-20-blur or bp[i 		*2-1],
+		i==#bp/2 and  size+20+blur or bp[(i+1)	*2-1]+blur
+	obj.setoption("dst","tmp")
+	obj.copybuffer("obj","cache:OT:bg")
+	obj.effect("ルミナンスキー","ぼかし",blur*2, "基準輝度",floor((d0+size)/(size*2)*4096),		"type",0)
+	obj.effect("ルミナンスキー","ぼかし",blur*2, "基準輝度",floor((d1+size)/(size*2)*4096),		"type",1)
+	obj.effect("反転","透明度反転",1)
+	obj.setoption("blend","alpha_sub")
+	obj.draw()
+
+--////////////////////
+	obj.setoption("blend",0)
+	obj.copybuffer("cache:OT:t"..i,"tmp")
+end
+----------
+obj.setoption("dst","tmp",w,h)
+for i=0,N do
+	if obj.copybuffer("obj","cache:OT:t"..i) then
+		-- obj.setoption("dst","tmp")
+		obj.draw()
+	end
+end
+obj.copybuffer("cache:OT:DP","tmp")
+-------------------------------------------------- DRAW INFO UI --------------------------------------------------
+if isShowBar then
+	obj.setfont("Zona Pro Bold",50)
+	-- BAR GRAPH ----------
+	-- rikky_module.log(size)
+	obj.setoption("blend",0)
+	local uiang=90
+	for i=0,#bp/2 do
+		local d0,d1 =
+			i==0 	 and -size-20-blur or bp[i 		*2-1],
+			i==#bp/2 and  size+20+blur or bp[(i+1)	*2-1]+blur
+
+		-- ///// -----
+
+		obj.setoption("dst","tmp",size*2,size*2)
+		if readImages(c,i+1) then
+			obj.setoption("dst","tmp")
+			obj.effect("斜めクリッピング","中心X",d0,"幅",0,"ぼかし",blur,"角度",uiang)
+			obj.effect("斜めクリッピング","中心X",d1,"幅",0,"ぼかし",blur,"角度",uiang+180)
+			obj.effect("斜めクリッピング","幅",100,"角度",0)
+			obj.draw(0,80)
+		else
+			obj.setoption("dst","tmp")
+			obj.load("figure","背景",0x333333)
+			obj.effect("斜めクリッピング","中心X",d0,"幅",0,"ぼかし",blur,"角度",uiang)
+			obj.effect("斜めクリッピング","中心X",d1,"幅",0,"ぼかし",blur,"角度",uiang+180)
+			obj.effect("斜めクリッピング","幅",100,"角度",0)
+			obj.draw(0,80,0,1,0.5)
+
+			obj.setoption("dst","tmp")
+			obj.load("<s200><#ddded3>missing")
+			obj.effect("リサイズ","X",d1-d0-40,"ドット数でサイズ指定",1)
+			obj.draw((d0+d1)/2-10,80)
+		end
+		
+		obj.copybuffer("cache:OT:t"..i,"tmp")
+	end
+
+	-- UI ----------
+	local blank = 10
+	obj.setoption("dst","tmp",size*2+100+blank*2,600+blank*2)
+	-- background
+	local bgcol = OT.isReseted[obj.layer] and (palette[1].back or 0x7a1e2a) or (palette[1].rback or 0x171e26)
+	obj.load("figure","四角形",bgcol,1)
+	-- putSquarePoly(0.7,size+50,270,(size+50)*-1,-300)
+	putSquarePoly(0.7,size+50,270,(size+50)*-1,-270)
+	obj.setoption("blend","alpha_max")
+	putSquarePoly(0.4,size+50+blank,270+blank,(size+50)*-1-blank,-270-blank)
+	obj.setoption("blend",0)
+
+	-- Title and info
+	-- obj.load("<#""><s40>Original Toon")
+	-- 	obj.draw(-size+130,-250)
+	-- obj.load("<#93a5cf><s25>area:"..N..";\nlayer:"..obj.layer..";")
+	-- 	obj.draw(size-30,-250)
+
+	-- gradation graph
+	obj.load("figure","四角形",0xffffff,size*2)
+	obj.effect("グラデーション","幅",size*2,"角度",-90,"color",0x000000,"color2",0xffffff)
+	obj.effect("斜めクリッピング","幅",100,"角度",0)
+	obj.draw(0,-100)
+	for i=0,#bp/2 do
+		if obj.copybuffer("obj","cache:OT:t"..i) then
+			obj.setoption("blend",0)
+			obj.draw()
+		end
+	end
+
+
+	obj.setoption("blend",0)
+	bp[-1] = -size
+	for i=1,#bp/2 do
+		local lcol = palette[1].pt[i%#palette[1].pt+1] or HSV(360/(#bp+2)/2*i,100,100)
+		polyline(
+			{	bp[i*2-1],	math.min(bp[i*2],-170),	0	},
+			{	bp[i*2-1],	math.max(bp[i*2],200),	0	},
+			5,
+			-- HSV(360/(#bp+2)/2*i,100,100),
+			lcol,
+			0.5
+		)
+
+		obj.load("figure","円",0x333333,35)
+		obj.draw(bp[i*2-1], bp[i*2],0,1,1)
+
+		obj.load("figure","円",0x888888,35,3)
+		obj.draw(bp[i*2-1], bp[i*2],0,1,1)
+
+		obj.load("<#e0e0e0><s20>"..i)
+		obj.draw((bp[(i-1)*2-1]+bp[i*2-1])/2,-10)
+	end
+	obj.load("<#e0e0e0><s20>"..(#bp/2+1))
+	obj.draw((bp[#bp/2+3]+size)/2,-10)
+
+	local lcol = palette[1].pt[1] or HSV(0,100,100)
+	polyline({-size,-170,0},{-size,170,0}, 8,lcol,0.5)
+	lcol = palette[1].pt[(#bp/2+1)%#palette[1].pt+1] or HSV(360/(#bp+2)/2*(#bp/2),100,100)
+	polyline({size,-170,0},{size,170,0}, 8,lcol,0.5)
+
+	if OT.isReseted[obj.layer] then
+		obj.load("<#e0e0e0><s>RESETED")
+		obj.draw(0,-220)
+	end
+
+	obj.copybuffer("cache:OT:UI","tmp")
+	---/////////////////////////////////////////
+	-- marge Display and UI
+	obj.setoption("dst","tmp",obj.screen_w,obj.screen_h)
+
+	obj.copybuffer("obj","cache:OT:DP")
+	obj.draw()
+	obj.copybuffer("obj","cache:OT:UI")
+	obj.draw()
+end
+--------------------------------------------------
+-- obj.setoption("dst","frm")
+obj.copybuffer("obj","tmp")

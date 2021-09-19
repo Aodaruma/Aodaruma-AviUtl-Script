@@ -204,18 +204,31 @@ Point.new = function(x, y)
     return o
 end
 local Area = {}
-Area.new = function(x1, y1, x2, y2)
+Area.new = function(x1, y1, x2, y2, x3, y3, x4, y4)
+    if not (type(x3) == "number" and type(y3) == "number" and type(x4) == "number" and type(y4) == "number") then
+        x3 = x3 or x2
+        y3 = y3 or y2
+        x4 = x4 or x1
+        y4 = y4 or y2
+        y2 = y1
+    end
     return {
         range = {
             {x1, y1},
-            {x2, y2}
+            {x3, y3}
         },
         points = {
             Point.new(x1, y1),
-            Point.new(x2, y1),
             Point.new(x2, y2),
-            Point.new(x1, y2)
-        }
+            Point.new(x3, y3),
+            Point.new(x4, y4)
+        },
+        renew = function(self, rx1, ry1, rx2, ry2, rx3, ry3, rx4, ry4)
+            local a = Area.new(rx1, ry1, rx2, ry2, rx3, ry3, rx4, ry4)
+            self.range = a.range
+            self.points = a.points
+            return self
+        end
     }
 end
 
@@ -236,101 +249,162 @@ local function sorting(t)
     return t
 end
 
--- Partition the region based on the idea of kd-tree.
--- 基本的に分割システムは、一気に3つ分割し、端2つを続けて分割する以外は、「オブジェクト配置」と同じ
-for i = 0, depth - 1 do
-    local tmp,tmp2 = {},{}
-    local m = math.pow(3, i)
-
-    for j = 1, m do
-            local a = areas[j]
-            local min, max = a.range[1][axis(i) + 1], a.range[2][axis(i) + 1]
-            -- 3つに分割する
-            local partition = obj.rand(0, resolution/2, j, seed + i * maxSeedAF + math.floor(seedAF))
-            local partition_next = obj.rand(0, resolution/2, j, seed + i * maxSeedAF + math.floor(seedAF + 1))
-            local partition2 = obj.rand(resolution/2, resolution, j, seed + i * maxSeedAF + math.floor(seedAF) + n)
-            local partition2_next = obj.rand(resolution/2, resolution, j, seed + i * maxSeedAF + math.floor(seedAF + 1) + n)
-            
-            -- このままだとpartition > partition2の場合もあるため、改善
-            partition, partition2 = unpack(sorting({partition,partition2}))
-            partition_next, partition2_next = unpack(sorting({partition_next,partition2_next}))
-
-            local easedSeedAF =
-                (E ~= nil and E.is_easing_type(easing)) and E.easing(easing, seedAF % 1, 0, 1, 1, 0, 1, 0) or
-                seedAF % 1
-            partition = partition * (1 - easedSeedAF) + partition_next * easedSeedAF
-            partition = (max - min) * partition / resolution + min
-
-            partition2 = partition2 * (1 - easedSeedAF) + partition2_next * easedSeedAF
-            partition2 = (max - min) * partition2 / resolution + min
-
-            local x1min, x1max, x2min, x2max, x3min, x3max =
-                unpack(
-                axis(i) == 0 and {min, partition, partition, partition2, partition2, max} or
-                    {
-                        a.points[1].x,
-                        a.points[3].x,
-                        a.points[1].x,
-                        a.points[3].x,
-                        a.points[1].x,
-                        a.points[3].x
-                    }
-            )
-            local y1min, y1max, y2min, y2max, y3min, y3max =
-                unpack(
-                axis(i) == 1 and {min, partition, partition, partition2, partition2, max} or
-                    {
-                        a.points[1].y,
-                        a.points[3].y,
-                        a.points[1].y,
-                        a.points[3].y,
-                        a.points[1].y,
-                        a.points[3].y
-                    }
-            )
-            tmp[3 * j -2] = Area.new(x1min, y1min, x1max, y1max)
-            tmp[3 * j - 1] = Area.new(x2min, y2min, x2max, y2max)
-            tmp[3 * j] = Area.new(x3min, y3min, x3max, y3max)
-            
-            -- grided areas
-            local ga = grided_areas[j]
-            local gmin, gmax = ga.range[1][axis(i) + 1], ga.range[2][axis(i) + 1]
-            -- 3つに分割する
-            
-            local grided_partition = (max - min) * (1/3*100) / resolution + min
-            local grided_partition2 = (max - min) * 2/3*100 / resolution + min
-
-            local x1min, x1max, x2min, x2max, x3min, x3max =
-                unpack(
-                axis(i) == 0 and {min, grided_partition, grided_partition, grided_partition2, grided_partition2, max} or
-                    {
-                        ga.points[1].x,
-                        ga.points[3].x,
-                        ga.points[1].x,
-                        ga.points[3].x,
-                        ga.points[1].x,
-                        ga.points[3].x
-                    }
-            )
-            local y1min, y1max, y2min, y2max, y3min, y3max =
-                unpack(
-                axis(i) == 1 and {min, grided_partition, grided_partition, grided_partition2, grided_partition2, max} or
-                    {
-                        ga.points[1].y,
-                        ga.points[3].y,
-                        ga.points[1].y,
-                        ga.points[3].y,
-                        ga.points[1].y,
-                        ga.points[3].y
-                    }
-            )
-            tmp2[3 * j - 2] = Area.new(x1min, y1min, x1max, y1max)
-            tmp2[3 * j - 1] = Area.new(x2min, y2min, x2max, y2max)
-            tmp2[3 * j] = Area.new(x3min, y3min, x3max, y3max)
+local m = math.pow(3,depth)
+local grided_areas, areas = {}, {}
+local stepX, stepY = sizeX/m, sizeY/m
+for i=1,m do
+    local tmp = {}
+    for j=1,m do
+        table.insert( tmp, Area.new(
+            stepX*(j-1), stepY*(i-1),
+            stepX*j, stepY*i
+        ))
     end
-    areas = tmp
-    grided_areas = tmp2
+    table.insert( areas, tmp )
+    table.insert( grided_areas, tmp )
 end
+
+for d=1,depth do
+    -- transforming
+    for i=1,m,2 do
+        for j=1,m,2 do
+            local a = areas[d*j][d*i]
+
+        end
+    end
+
+    -- interpolating
+    for i=1,m do
+        for j=1,m do
+            if not (i % 2 == 0 and j % 2 == 0) then
+                local a = areas[d*i][d*j]
+                -- if i % 2 == 1 and j % 2 == 0 then -- vertical
+                --     local v1,v2 = areas[d*(i-1)][d*j],areas[d*(i+1)][d*j]
+                --     a:renew(
+                --         unpack(v1.points[3]:returnCoordinate()),
+                --         unpack(v1.points[4]:returnCoordinate()),
+                --         unpack(v2.points[2]:returnCoordinate()),
+                --         unpack(v2.points[1]:returnCoordinate())
+                --     )
+                -- elseif i%2 == 0 and j % 2 == 1 then -- horizontal
+                --     local h1,h2 = areas[d*i][d*(j-1)],areas[d*i][d*(j+1)]
+                --     a:renew(
+                --         unpack(h1.points[2]:returnCoordinate()),
+                --         unpack(h2.points[1]:returnCoordinate()),
+                --         unpack(h2.points[4]:returnCoordinate()),
+                --         unpack(h1.points[3]:returnCoordinate())
+                --     )
+                -- else -- diagonal
+                --     local c1,c2,c3,c4 =
+                --         areas[d*(i-1)][d*(j-1)],
+                --         areas[d*(i-1)][d*(j+1)],
+                --         areas[d*(i+1)][d*(j+1)],
+                --         areas[d*(i+1)][d*(j-1)]
+                --     a:renew(
+                --         unpack(c1.points[3]:returnCoordinate()),
+                --         unpack(c2.points[4]:returnCoordinate()),
+                --         unpack(c3.points[1]:returnCoordinate()),
+                --         unpack(c4.points[2]:returnCoordinate())
+                --     )
+                -- end
+            end
+        end
+    end
+end
+
+-- for i = 0, depth - 1 do
+--     local tmp,tmp2 = {},{}
+--     local m = math.pow(3, i)
+
+--     for j = 1, m do
+--             local a = areas[j]
+--             local min, max = a.range[1][axis(i) + 1], a.range[2][axis(i) + 1]
+--             -- 3つに分割する
+--             local partition = obj.rand(0, resolution/2, j, seed + i * maxSeedAF + math.floor(seedAF))
+--             local partition_next = obj.rand(0, resolution/2, j, seed + i * maxSeedAF + math.floor(seedAF + 1))
+--             local partition2 = obj.rand(resolution/2, resolution, j, seed + i * maxSeedAF + math.floor(seedAF) + n)
+--             local partition2_next = obj.rand(resolution/2, resolution, j, seed + i * maxSeedAF + math.floor(seedAF + 1) + n)
+            
+--             -- このままだとpartition > partition2の場合もあるため、改善
+--             partition, partition2 = unpack(sorting({partition,partition2}))
+--             partition_next, partition2_next = unpack(sorting({partition_next,partition2_next}))
+
+--             local easedSeedAF =
+--                 (E ~= nil and E.is_easing_type(easing)) and E.easing(easing, seedAF % 1, 0, 1, 1, 0, 1, 0) or
+--                 seedAF % 1
+--             partition = partition * (1 - easedSeedAF) + partition_next * easedSeedAF
+--             partition = (max - min) * partition / resolution + min
+
+--             partition2 = partition2 * (1 - easedSeedAF) + partition2_next * easedSeedAF
+--             partition2 = (max - min) * partition2 / resolution + min
+
+--             local x1min, x1max, x2min, x2max, x3min, x3max =
+--                 unpack(
+--                 axis(i) == 0 and {min, partition, partition, partition2, partition2, max} or
+--                     {
+--                         a.points[1].x,
+--                         a.points[3].x,
+--                         a.points[1].x,
+--                         a.points[3].x,
+--                         a.points[1].x,
+--                         a.points[3].x
+--                     }
+--             )
+--             local y1min, y1max, y2min, y2max, y3min, y3max =
+--                 unpack(
+--                 axis(i) == 1 and {min, partition, partition, partition2, partition2, max} or
+--                     {
+--                         a.points[1].y,
+--                         a.points[3].y,
+--                         a.points[1].y,
+--                         a.points[3].y,
+--                         a.points[1].y,
+--                         a.points[3].y
+--                     }
+--             )
+--             tmp[3 * j -2] = Area.new(x1min, y1min, x1max, y1max)
+--             tmp[3 * j - 1] = Area.new(x2min, y2min, x2max, y2max)
+--             tmp[3 * j] = Area.new(x3min, y3min, x3max, y3max)
+            
+--             -- grided areas
+--             local ga = grided_areas[j]
+--             local gmin, gmax = ga.range[1][axis(i) + 1], ga.range[2][axis(i) + 1]
+--             -- 3つに分割する
+            
+--             local grided_partition = (max - min) * (1/3*100) / resolution + min
+--             local grided_partition2 = (max - min) * 2/3*100 / resolution + min
+
+--             local x1min, x1max, x2min, x2max, x3min, x3max =
+--                 unpack(
+--                 axis(i) == 0 and {min, grided_partition, grided_partition, grided_partition2, grided_partition2, max} or
+--                     {
+--                         ga.points[1].x,
+--                         ga.points[3].x,
+--                         ga.points[1].x,
+--                         ga.points[3].x,
+--                         ga.points[1].x,
+--                         ga.points[3].x
+--                     }
+--             )
+--             local y1min, y1max, y2min, y2max, y3min, y3max =
+--                 unpack(
+--                 axis(i) == 1 and {min, grided_partition, grided_partition, grided_partition2, grided_partition2, max} or
+--                     {
+--                         ga.points[1].y,
+--                         ga.points[3].y,
+--                         ga.points[1].y,
+--                         ga.points[3].y,
+--                         ga.points[1].y,
+--                         ga.points[3].y
+--                     }
+--             )
+--             tmp2[3 * j - 2] = Area.new(x1min, y1min, x1max, y1max)
+--             tmp2[3 * j - 1] = Area.new(x2min, y2min, x2max, y2max)
+--             tmp2[3 * j] = Area.new(x3min, y3min, x3max, y3max)
+--     end
+--     areas = tmp
+--     grided_areas = tmp2
+-- end
 
 ----------------
 local z = 0

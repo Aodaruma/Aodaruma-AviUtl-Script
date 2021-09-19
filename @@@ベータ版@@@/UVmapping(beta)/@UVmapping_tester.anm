@@ -1,0 +1,82 @@
+--[[
+※※※　このスクリプトはベータ版です。このスクリプトを実行することによるいかなる損害について、開発者は責任を負いません。　※※※
+
+UVmapping - ver.0.01
+
+UVmappingのベータスクリプトです。例外・バグ等あれば、開発者までご報告いただけますと幸いです。
+また、スクリプトは随時更新され、正式リリースすればスクリプト名が「UVmapping」に変更されます。
+ご理解のほどよろしくお願いいたします。
+
+Developed by Aodaruma
+Edited at 1:23 2020/07/06
+]]
+
+
+--------------------------------------------------
+@makeMap
+--------------------------------------------------
+--check0:作成する,0
+package.cpath=package.cpath..";"..obj.getinfo"script_path":gsub("[^\\]+\\$","?.dll")
+require("UVmapping")
+
+if obj.check0 then
+    local d,w,h = obj.getpixeldata()
+    UVmapping.make(d,w,h)
+    obj.putpixeldata(d)
+end
+
+
+--------------------------------------------------
+@saveMap
+--------------------------------------------------
+--track0:保存場所,1,10,1,1
+--check0:保存する,0
+package.cpath=package.cpath..";"..obj.getinfo"script_path":gsub("[^\\]+\\$","?.dll")
+require("UVmapping")
+
+if obj.check0 then
+    local d,w,h = obj.getpixeldata("alloc")
+    UVMR = UVMR or {}
+    UVMR[obj.track0] = {d=d,w=w,h=h}
+end
+
+--------------------------------------------------
+@mapping
+--------------------------------------------------
+--track0:格納場所,1,10,1,1
+--check0:マッピングする,0
+
+package.cpath=package.cpath..";"..obj.getinfo"script_path":gsub("[^\\]+\\$","?.dll")
+require("UVmapping")
+
+if obj.check0 then
+    if not UVmapping then
+        obj.setfont("メイリオ",50)
+        local msg = "@UVmapping_tester.anm, layer"..obj.layer..":\nUVmapping.dllがexedit.aufがあるフォルダー以下に見つかりませんでした。\nスクリプトが所定の場所にあるか確認してください。"
+        obj.load(msg)
+        error(msg)
+    else if not UVMR then
+        obj.setfont("メイリオ",50)
+        local msg = "@UVmapping_tester.anm, layer"..obj.layer..":\n保存されたMAPが存在しません。saveMapが実行されていないようです。\n適用したいマップのフレームバッファに対してsaveMapを実行してください。"
+        obj.load(msg)
+        error(msg)
+    else if not UVMR[obj.track0] then
+        obj.setfont("メイリオ",50)
+        local msg = "@UVmapping_tester.anm, layer"..obj.layer..":\n指定された「格納場所」にMAPが存在しません。\n所定の位置にマップが保存されているか確認してください。"
+        obj.load(msg)
+        error(msg)
+    else
+        local ref = UVMR[obj.track0]
+        local d,w,h = obj.getpixeldata()
+        local d2,_,_ = obj.getpixeldata("alloc")
+        if ref.w == w and ref.h == h then
+            UVmapping.mapping(ref.d,ref.w,ref.h,d,w,h,d2)
+            obj.putpixeldata(d2)
+        else
+            obj.setfont("メイリオ",50)
+            local msg = "@UVmapping_tester.anm, layer"..obj.layer..":\n保存されたMAPとこのオブジェクトの縦横のサイズが一致しません。\nマップと適用先のオブジェクトは同じ縦横サイズにしてください。"
+            obj.load(msg)
+            error(msg)
+        end
+    end
+end

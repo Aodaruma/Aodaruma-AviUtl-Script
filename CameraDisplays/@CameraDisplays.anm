@@ -1,0 +1,95 @@
+--[[
+説明するまでもないというか、
+説明するより触ったほうが絶対わかりやすいので省略。
+
+Aviutlでカメラ制御にて見かけ上のX,Y座標を取得するとかいうスクリプトです。
+
+rikky_moduleが必要。
+
+コードも格納機能を除けばほんの数行で終わってしまうほど単純すぎるスクリプトなので、
+需要はかなり低い可能性。
+スクリプト制御なら２行で済んでしまいます。
+
+取りあえずHUD向きなものなので注意事項だけ書いておきます。
+
+◆ 注意しておきたいこと ◆◆◆◆◆
+・Saveは必ずカメラ制御下に置かれたオブジェクトに設定してください
+・Readは必ずカメラ制御に置かれていない & Saveを付与したオブジェクトより上においてください。
+・ReadOptionはReadの上に設定しておいてください。
+◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆
+
+
+あと、「
+CD[【ここに読込場所を指定】].x,CD[【ここに読込場所を指定】].y
+
+例: CD[1].x,CD[1].y
+」
+を他のスクリプトのダイアログ欄のとかに入力したりすると、いろいろ使えたりします。
+
+
+LastEdit: 15:37 2017/02/24
+
+Developed by Aodaruma
+twitter: @Aodaruma_
+
+]]--
+--------------------------------------------------------------------
+@Save
+--------------------------------------------------------------------
+--track0:+X,-5000,5000,0
+--track1:+Y,-5000,5000,0
+--track3:格納場所,1,200,1,1
+--check0:格納を実行,0
+require("rikky_module")
+
+if(type(rikky_module.camerainfo())=="table") then
+	local px,py,l=obj.track0,obj.track1,obj.track3
+	local cam=rikky_module.camerainfo()
+	if(obj.check0) then
+		CD=CD or {}
+		CD["option"]=CD["option"] or {}
+		CD[l]={x=cam.ix+px,y=cam.iy+py}
+	end
+else
+	obj.setfont("メイリオ",40)
+	obj.load("rikky_moduleが正常に読み込まれていません。")
+	obj.draw()
+end
+--------------------------------------------------------------------
+@Read
+--------------------------------------------------------------------
+--track0:+X,-5000,5000,0
+--track1:+Y,-5000,5000,0
+--track2:Affect,0,100,100,0.01
+--track3:読込場所,1,200,1,1
+--check0:option,0
+
+local px,py,af,l=obj.track0,obj.track1,obj.track2/100,obj.track3
+local x,y
+if(type(CD)=="table") and (type(CD[l])=="table") then
+	if(obj.check0) and (type(CD.option[obj.layer])=="table") then
+		x,y=CD.option[obj.layer].x,CD.option[obj.layer].y
+		CD.option[obj.layer]=nil
+	else
+		x,y=CD[l].x,CD[l].y
+	end
+	obj.ox,obj.oy=(x+px)*af,(y+py)*af
+else
+	obj.setfont("メイリオ",40)
+	obj.load("格納場所に情報が保存されていません\n設定されている格納場所: "..l)
+	obj.draw()
+end
+
+--------------------------------------------------------------------
+@ReadOption
+--------------------------------------------------------------------
+--track0:X倍率%,-500,500,100,0.01
+--track1:Y倍率%,-500,500,100,0.01
+--track2:全体倍率,-500,500,100,0.01
+--track3:読込場所,1,200,1,1
+
+local dx,dy,da,l=obj.track0/100,obj.track1/100,obj.track2/100,obj.track3
+
+if(type(CD)=="table") then
+	CD.option[obj.layer]={x=CD[l].x*dx*da, y=CD[l].y*dy*da}
+end

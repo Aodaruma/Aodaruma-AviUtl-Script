@@ -1,0 +1,185 @@
+--[[
+v1.2
+
+pixel sortということでピクセルをソートしているだけのスクリプトです。というかそれ以外の機能ないです。
+
+グリッチ勢にとてもとても重要なアイテムだと思います。
+
+とてもシンプルなので説明文なくても分かると思います。分かります。分かってくれ(懇願)
+
+使い続けてるとたまにメモリ不足を引き起こします。
+なので、一時保存とかを使ってうまく工夫すると結構使えます。
+
+
+一応、一応さらっと説明だけ....
+
+◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆
+基準輝度:		画像切り出しの基準となる輝度です。
+
+輝度幅:		基準輝度からの輝度の幅です。左右あり。
+
+方向:		「1」以外はおまけ程度につきました。というか「1」しかほとんど使いどころないと思います。
+
+引き伸ばし:	ピクセルを引き延ばします。数字に比例して重たくなります。
+
+領域幅を確認:	選択した輝度を見れます。
+
+サイズ:		ピクセルのモザイク化のサイズです。小さければ小さいほど重いです。逆に大きいと結構軽いです。2~4がおすすめ。
+
+アルファ判定値:	透明な部分を使っているオブジェクトに対して、判定値でアルファを二値化します。
+
+原型を保持する:	引き伸ばしの際元の形を保持します。
+◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆
+
+
+Developed by Aodaruma
+Twitter: @Aodaruma_
+Last Edit: 7:00 2017/04/19
+
+-------version
+v1.0
+	- 作成
+
+v1.2
+	- 引き伸ばし機能を追加
+	- また、軽量化
+
+]]
+--track0:基準輝度,0,4056,3000,1
+--track1:輝度幅,1,4056,100,1
+--track2:方向,1,9,1,1
+--track3:引き伸ばし,0,50,0,1
+--check0:領域幅を確認,1
+--dialog:サイズ,local s=3;ｱﾙﾌｧ判定値%,local alp=50;原型を保持する/chk,local isExtend=0;
+
+local b,d,r,e=obj.track0,obj.track1,obj.track2,obj.track3
+local i,j,w,h,col,a,tmp,div,dw,dh,k,vi,vj,vw,vh,k,display,ka,kb,pixel,u,v,g
+local log=function(s) debug_print(s) end
+alp = alp/100
+pixel = {}
+
+obj.setoption("antialias",0)
+obj.copybuffer("tmp","obj")
+obj.load("tempbuffer")
+obj.effect(
+	"ルミナンスキー"	 ,
+	"type",		4 ,
+	"基準輝度",	b ,
+	"ぼかし",		d
+	)
+-- obj.effect("反転","透明度反転",1)
+obj.copybuffer("tmp","obj")
+
+
+obj.load("tempbuffer")
+if(r>4) and (r~=9) then obj.effect("ローテーション","90度回転",1) end
+
+w,h=obj.getpixel()
+div={}
+dw,dh = math.floor(w/s),math.floor(h/s)
+
+
+
+-- すっげえめんどくさいコードになってますが仕様はr<=2でj or iを指定してるだけです
+for i=1,dw do
+	for j=1,dh do
+		vi,vj = (r<9 and i or j), (r<9 and j or i)
+		div[vi] = div[vi] or {}
+		div[vi][vj] = {}
+
+		col,a=obj.getpixel(i*s,j*s)
+		
+		a = (alp>a and 0 or 1)
+		tmp={
+			col		= col	,
+			a 		= a 	,
+			start	= false	,
+			finish	= false
+		}
+
+		div[vi][vj]=tmp
+
+	end
+end
+log("successed to store pixels to array")
+
+
+if(obj.check0) then
+	log("check luminance region")
+	for i=1,w do
+		for j=1,h do
+			col,a=obj.getpixel(i,j)
+			a = (alp>a and 0 or 1)
+			if(a>0) then obj.putpixel(i,j,0x00ff00,1) end
+		end
+	end
+else
+	log("run pixel sort")
+	--------------------------------------------------------------------
+
+	vw,vh = (r<9 and dw or dh), (r<9 and dh or dw)
+
+	----------------------------------------------------------------------------------------
+	----------------------------------------------------------------------------------------
+	----------------------------------------------------------------------------------------
+	for i=1,dw do
+		tmp={}
+		for j=1,dh do
+			vi,vj = (r<9 and i or j), (r<9 and j or i)
+			if(type(div[vi][vj].a)=="number") and (div[vi][vj].a>0) then table.insert(tmp,div[vi][vj].col) end
+		end
+		-- tmp = sort(tmp)
+		table.sort(tmp)
+		k=1
+		for j=1,dh do
+			vi,vj = (r<9 and i or j), (r<9 and j or i)
+			if(type(div[vi][vj].a)=="number") and(div[vi][vj].a>0) then
+				k=k+1
+				div[vi][vj].col = tmp[k]
+			end
+		end
+	end
+	test = tmp
+
+	-------------------------
+
+	--obj.setoption("dst","tmp",w,h)　--obj.getpixel() と obj.w,obj.h は同様らしい
+	debug_print("size: "..s)
+	
+
+	if 		(r==2) or (r==6) then 	u,v=0,1
+	elseif	(r==3) or (r==7) then	u,v=1,0
+	elseif	(r==4) or (r==8) then	u,v=1,1
+	else 	--[[r==1 or 5]]			u,v=0,0
+	end
+	if(r>4) and (r~=9) then g=1 else g=0 end
+	for i=1,dw do
+		for j=1,dh do
+			vi,vj = i,j
+
+			if(type(div[vi][vj])=="table") then
+				col,a=div[vi][vj].col,div[vi][vj].a
+				if(col) and (a) then
+					for ka=1,s do
+						for kb=1,s do
+							for k=1,e+1 do
+
+							obj.putpixel(
+								math.abs((dw*s*u)-(i*s+ka)) +(e*i+k)*(1-g)*(1-isExtend) +(e+k)*(1-g)*(isExtend), 
+								math.abs((dh*s*v)-(j*s+kb)) +(e*j+k)*(g)*(1-isExtend) +(e+k)*(g)*(isExtend),
+								col,a
+								)
+							end
+						end	
+					end
+				end
+			end
+		end
+	end
+	if(r>4) and (r~=9) then obj.effect("ローテーション","90度回転",-1) end
+
+	debug_print("success")
+end
+--obj.load("tempbuffer")
+--[[
+]]

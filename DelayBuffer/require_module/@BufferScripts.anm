@@ -1,0 +1,201 @@
+--[[
+version: 1.0
+
+なんかAEっぽいスクリプトができればと思って作りました。
+
+rikky氏のrikky_moduleが必要となります。
+
+
+93氏のDelayMoveをもうちょい進化させた感じのスクリプトです。
+というか、フレーム自体をDelayさせようとかいうスクリプトです。
+
+フレーム合計が多ければ多いほど、メモリがだんだん圧迫していきます。
+一応オブジェクトの最初と最後にメモリ開放するようにしていますが、
+環境によってはメモリ不足のダイアログが出現して出血多量死になっても責任は負えません....
+
+フラットデザインとかでうまく使えばそれなりの感じが出ると思います。
+
+◆　簡単な機能説明　◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆
+ Save :	フレームを保存します。
+	一応図形やテキストなどにも使えますが、フレームバッファにかけることを推奨します。
+	「フレーム合計」で保存する前フレームの数を、「speed」でスピードを調整します。
+
+ Read :	フレームを読み込みます。
+	「フレーム差」で、現在のフレームからから何フレーム前までさかのぼるか指定することができます。
+	「読込場所」はSaveで指定した「保存場所」と同じ番号を入力してください。
+
+ Diff :	フレームとフレームの差分を取ります。
+	「元」は差分のもととなるフレーム、「差」は元となるフレームから引く差分合成のフレームを指定します。
+	それぞれの「読込場所」は、保存場所を指定します。
+	場合によってはフレーム全体で差分してしまうため、一応ルミナンスキーの対策も取っております。
+	ただし、文字数の関係でルミナンスキーはどちらのフレームも一緒にかけてしまいますので、ご理解くださいませ。
+
+ Compo: フレームとフレームを合成します。
+	01,02はそれぞれ合成するフレームを指定します。
+	こちらにもルミナンスキーの対策をとっております。
+
+◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆
+
+version:
+v1.0: 	作成。
+
+Last Edit: 18:32 2017/02/18
+
+Developed by Aodaruma
+twitter: @Aodaruma_
+
+]]--
+--------------------------------------------------------------
+@DelayBuffer - Save
+--------------------------------------------------------------
+--track0:フレーム合計,1,50,9,1
+--track1:speed(%),0,500,100
+--track3:保存場所,1,100,1,1
+--check0:非表示,0
+
+local difFrame=obj.track0
+local saveFrame=obj.track0
+local speed=obj.track1/100
+-------------------
+
+require("rikky_module")
+local nm="BS"
+local i
+local n,d,l=saveFrame,difFrame,obj.track3
+local f=math.floor(obj.frame/speed)%n+1
+local fd=math.floor(obj.frame/speed+d)%n+1
+local iwr,ird,icl=
+	function(k) rikky_module.image("w",k) end,
+	function(k) rikky_module.image("r",k) end,
+	function(k) rikky_module.image("c",k) end
+
+
+if(obj.frame==0) then
+	for i=1,n do
+		icl(nm..":"..l..":"..i)
+	end
+end
+iwr(nm..":"..l..":"..f)
+if(obj.frame==obj.totalframe) then
+	for i=1,n do
+		icl(nm..":"..l..":"..i)
+	end
+end
+if(type(DB)~="table") then DB={} end
+DB[l]={}
+DB[l]["speed"]=speed
+DB[l]["n"]=n
+if(obj.check0) then
+	obj.alpha=0
+end
+
+--------------------------------------------------------------
+@DelayBuffer - Read
+--------------------------------------------------------------
+--track0:フレーム差,0,50,3,1
+--track3:読込場所,1,100,1,1
+
+
+require("rikky_module")
+local nm="BS"
+local i
+local d,l=obj.track0,obj.track3
+local speed,n=DB[l].speed,DB[l].n
+local fd=math.floor(obj.frame/speed+d)%n+1
+local iwr,ird,icl=
+	function(k) rikky_module.image("w",k) end,
+	function(k) rikky_module.image("r",k) end,
+	function(k) rikky_module.image("c",k) end
+
+ird(nm..":"..l..":"..fd)
+
+--------------------------------------------------------------
+@DelayBuffer - Diff
+--------------------------------------------------------------
+--track0:ﾌﾚｰﾑ差-元,0,50,3,1
+--track1:ﾌﾚｰﾑ差-差,0,50,3,1
+--track3:読込場所-元,1,100,1,1
+--track3:読込場所-差,1,100,1,1
+--dialog:ﾙﾐﾅﾝｽ(暗)で透過/chk,local isLumi=1;ﾙﾐﾅﾝｽ(暗)値,local LumiNum=4096;
+require("rikky_module")
+local nm="BS"
+local i
+local d1,d2,l,l2=obj.track0,obj.track1,obj.track2,obj.track3
+local speed,n,speed2,n2=DB[l].speed,DB[l].n,DB[l2].speed,DB[l2].n
+local fd1,fd2=math.floor(obj.frame/speed+d1)%n+1, math.floor(obj.frame/speed2+d2)%n2+1
+local iwr,ird,icl=
+	function(k) rikky_module.image("w",k) end,
+	function(k) rikky_module.image("r",k) end,
+	function(k) rikky_module.image("c",k) end
+
+ird(nm..":"..l..":"..fd2)
+if(isLumi==1) then
+	obj.effect("ルミナンスキー",
+		"type",0,
+		"基準輝度",LumiNum,
+		"ぼかし",0
+	)
+end
+obj.copybuffer("cache:BS-tmp","obj")
+obj.setoption("dst","tmp",obj.screen_w,obj.screen_h)
+ird(nm..":"..l..":"..fd1)
+if(isLumi==1) then
+	obj.effect("ルミナンスキー",
+		"type",0,
+		"基準輝度",LumiNum,
+		"ぼかし",0
+	)
+end
+obj.draw()
+obj.setoption("blend","alpha_sub")
+obj.copybuffer("obj","cache:BS-tmp")
+obj.draw()
+obj.load("tempbuffer")
+
+--------------------------------------------------------------
+@EffectBuffer - Compo
+--------------------------------------------------------------
+--track0:ﾌﾚｰﾑ差-01,0,50,3,1
+--track1:ﾌﾚｰﾑ差-02,0,50,1,1
+--track2:読込場所01,1,100,1,1
+--track3:読込場所02,1,100,1,1
+--dialog:ﾙﾐﾅﾝｽ(暗)で透過/chk,local isLumi=1;ﾙﾐﾅﾝｽ(暗)値,local LumiNum=4096;
+
+require("rikky_module")
+local nm="BS"
+local i
+local d1,d2,l,l2=obj.track0,obj.track1,obj.track2,obj.track3
+local speed,n,speed2,n2=DB[l].speed,DB[l].n,DB[l2].speed,DB[l2].n
+local fd1,fd2=math.floor(obj.frame/speed+d1)%n+1, math.floor(obj.frame/speed2+d2)%n2+1
+local iwr,ird,icl=
+	function(k) rikky_module.image("w",k) end,
+	function(k) rikky_module.image("r",k) end,
+	function(k) rikky_module.image("c",k) end
+
+ird(nm..":"..l..":"..fd1)
+if(isLumi==1) then
+	obj.effect("ルミナンスキー",
+		"type",0,
+		"基準輝度",LumiNum,
+		"ぼかし",0
+	)
+end
+obj.copybuffer("cache:BS-tmp","obj")
+
+obj.setoption("dst","tmp",obj.screen_w,obj.screen_h)
+ird(nm..":"..l..":"..fd2)
+if(isLumi==1) then
+	obj.effect("ルミナンスキー",
+		"type",0,
+		"基準輝度",LumiNum,
+		"ぼかし",0
+	)
+end
+obj.draw()
+obj.copybuffer("obj","cache:BS-tmp")
+obj.load("tempbuffer")
+
+
+
+
+-- 次回バージョン更新はもっと機能が増えてたらいいな....

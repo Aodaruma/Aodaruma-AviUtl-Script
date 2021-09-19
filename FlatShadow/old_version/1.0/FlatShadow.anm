@@ -1,0 +1,141 @@
+--[[
+
+ついにといってはなんですが、念願のロングシャドースクリプトが作成されました。
+また、新たにrikky氏のご協力により、rikky_moduleとこのスクリプトのループ部分のdllを作成していただけました(本当にありがとうございます...!)
+
+◆ 導入 ◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆
+pluginフォルダーに、rikky_module.dllの現在の最新バージョン(ここ重要)と、
+AviutlLongShadow.dllを入れてください。
+また、このスクリプト自体はsciprtフォルダー以下に入れてください。
+
+◆ 説明 ◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆
+では、各説明だけ致します。実際は触ってみたほうがわかりやすいかと思います。
+
+Length			:	シャドーの長さ。
+Angle			:	シャドーの角度。
+RAlpha(p)		:	画像透明度の閾値。特にテキストはフォントによって微調整必須です。
+Bidirectional	:	双方向にシャドーを伸ばすか否か。
+
+dialog
+影のみ			:	オブジェクトではなくシャドーのみの描画。
+color 			:	シャドーの色。
+グラデーション		:	シャドーに関して、端に行けば行くほどグラデーションするか否か。
+GradColor		:	グラデーションの端の色。
+					backgroundという文字列を入れれば背景の色を適用させようとしましたが、
+					のちのバージョンで透明度を実装しようと考えたので、実装しておりません。
+回転処理			:	オブジェクトの回転トラックバーでの回転処理の変更。
+画像透明度を調整する:	画像透明度を直下のダイアログで調整するか否か。
+画像透明度調整(%)	:	画像透明度を調整します。
+					画像の透明度を調整するので、元のアルファ値が無視されてしまうところが欠点です。
+拡張上、下、左、右	:	シャドーを描画する際、領域拡張を実行するにあたって設定する値です。
+
+現在のところ上記が実装されております。
+また、バージョンアップによってシャドー自体の透明度が実装される予定ですので、後程お待ちください。
+
+--- versions ◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆
+1.0	:	スクリプト作成。
+
+--- authors ◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆
+script				:	Aodaruma	(@Aodaruma_)
+dll,special thanks	:	rikky 		(@rikky_mausu)
+
+--- date of update script ◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆
+0:05 2017/11/19
+
+]]
+--track0:Length,0,1000,100,1
+--track1:Angle,-720,720,135
+--track2:RAlha(p),0,255,200,1
+--check0:Bidirectional,0;
+--dialog:影のみ/chk,local isOnlyShadow=0;color/col,local shadowcol=0x747474;グラデーション/chk,local isGrad=1;GradColor/col,local gradcol=0xdddddd;回転処理/chk,local isChRotation=1;画像透明度を調整する/chk,local isAdjAlpha=0;画像透明度調整(%),local AdjAlpha=500;拡張: 上,local U=0;　　└下,local D=0;　　└左,local le=0;　　└右,local R=0;
+
+require("rikky_module")
+local w,h=obj.getpixel()
+local L,ang=obj.track0,obj.track1-90-(obj.rz*isChRotation)
+local fx,fy=
+	L*math.cos(math.rad(ang)),
+	L*math.sin(math.rad(ang))
+local settmp=function() obj.setoption("dst","tmp") end
+local t,px,py,x,y,p,i,j,k,t
+
+if(fx<0)then
+	le=-fx
+else
+	R=fx
+end
+
+if(fy<0)then	
+	U=-fy	
+else 
+	D=fy
+end
+
+-- options
+obj.alpha=isAdjAlpha==1 and obj.alpha*AdjAlpha/100 or obj.alpha
+if isOnlyShadow==1 then obj.effect("単色化","color",shadowcol,"輝度を保持する",0) end
+--if isGrad==1 then obj.setoption("dst","tmp") end
+
+-- 領域拡張&取得
+if obj.check0 then 	obj.effect("領域拡張","上",U+D,"下",U+D,"右",R+le,"左",R+le)
+else 					obj.effect("領域拡張","上",U,"下",D,"右",R,"左",le)			end
+local a,b,c=rikky_module.bordering("pixel",obj.track2)
+-- dll版。作成はご教授いただいたrikky氏から。
+require("AviutlLongShadow")
+AviutlLongShadow.func(c, a, fx, fy, L, shadowcol)
+if obj.check0 then AviutlLongShadow.func(c, a, -fx, -fy, L, shadowcol) end
+
+--[[
+以下はLuaのみ。
+プラグインが使用できない場合においてのみご使用ください。
+また、使用する際は上のプラグイン使用コード部分をコメントアウトしてください。
+
+for i =1,c do
+	for j = 1,b[i] do
+		x,y=
+			a[i][j*2-1],
+			a[i][j*2]
+		for k = 0,L do
+
+			p=k/L
+			px,py=math.floor(x+fx*p),math.floor(y+fy*p)
+			for v=0,3 do
+				c,t=obj.getpixel(px+v%2,py+math.floor(v/2))
+				if(t==0)then 
+					-- settmp()
+					obj.putpixel(px+v%2,py+math.floor(v/2),shadowcol,1) 
+				end
+			end
+			-- c,t=obj.getpixel(px,py)
+			-- if(t==0)then obj.putpixel(px,py,0xffffff,1) end
+			-- c,t=obj.getpixel(px+1,py)
+			-- if(t==0)then obj.putpixel(px+1,py,0xffffff,1) end
+			-- c,t=obj.getpixel(px,py+1)
+			-- if(t==0)then obj.putpixel(px,py+1,0xffffff,1) end
+			-- c,t=obj.getpixel(px+1,py+1)
+			-- if(t==0)then obj.putpixel(px+1,py+1,0xffffff,1) end
+		end
+	end
+end
+]]
+
+--[[
+if isGrad==1 then 
+	obj.draw()
+	obj.copybuffer("obj","tmp")
+end
+-- obj.load("tempbuffer")
+-- obj.draw()
+]]
+
+if isGrad==1 then
+	if obj.num>1 then
+		obj.effect("グラデーション","no_color",1,"color2",gradcol,"角度",ang-90,"幅",L)
+	else
+		if math.sin(math.rad(ang))<0 then
+			obj.effect("グラデーション","no_color",1,"color2",gradcol,"角度",180,"幅",L,"中心Y",-math.sin(math.rad(ang))*L/4)
+		else
+			obj.effect("グラデーション","no_color",1,"color2",gradcol,"角度",0,"幅",L,"中心Y",-math.sin(math.rad(ang))*L/4)
+		end
+	end
+end
+obj.setoption("antialias",1)

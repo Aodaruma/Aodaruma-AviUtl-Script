@@ -1,0 +1,87 @@
+--[[
+
+Developed by Aodaruma(@Aodaruma_)
+Last Edit:
+]]
+@扇形
+--track0:Num,1,100,10,1
+--track1:ClipAngle,-360,360,150
+--track2:Random(%),-200,200,100
+--track3:Affect(%),0,100,75
+--dialog:colors(base)/col,local colbase={0xffffff,0xf4f5f9,0xdcdfe6};colors(accent)/col,local colaccent={0xf13f4b,0x252b41};比率(accent),local accentRatio=20;位置ﾗﾝﾀﾞﾑ(%),local randPst=100;角度ﾗﾝﾀﾞﾑ(%),local randAngle=30;拡大率ﾗﾝﾀﾞﾑ(%),local randSize=50;└ｻｲｽﾞtype[0-2],local sizetype=0;└ｻｲｽﾞ拡大(%),local sizezoom=100;仮想バッファ/chk,local isTempbuffer=0;seed,local seed=777;
+
+require("fan_clipping")
+if fan_clipping then
+	local n,ca,randaf,af=obj.track0,obj.track1,obj.track2/100,obj.track3
+	local colors = {}
+	local zooming,ptangle,alangle
+
+	local function Normalize(v,min,max)
+		if min and v<min then
+			return min
+		elseif max and v>max then
+			return max
+		end
+		return v
+	end
+
+	local function pickUpColor(n,base,accent,ratio,seed)
+		if type(base)=="number" then base = {base} end
+		if #base==0 then base = {0xffffff} end
+		if type(accent)=="number" then accent = {accent} end
+		local rand,pickcol
+		local result = {}
+		local na,nb=0,0
+
+		for i=1,n do
+			rand = obj.rand(0,100,100+#base+#accent+seed,i)
+			if rand<ratio and #accent~=0 then
+				table.insert(result,accent[na%#accent+1])
+				na = na + 1
+			else
+				table.insert(result,base[nb%#base+1])
+				nb = nb + 1
+			end
+		end
+		return result
+	end
+
+	local eaf,naf = Normalize(af*2,0,100)/100, Normalize(af-50,0,100)/100
+	seed		= seed or 0
+	sizezoom	= sizezoom 		and Normalize(sizezoom,0,nil)/100		or 0
+	sizetype 	= sizetype 		and math.floor(Normalize(sizetype,0,2)) or 0
+	accentRatio	= accentRatio 	and Normalize(accentRatio,0,100)		or 0
+	randPst		= randPst 		and Normalize(randPst,0,100)/100		or 0
+	randAngle	= randAngle 	and Normalize(randAngle,0,100)/100		or 0
+	randSize	= randSize 		and Normalize(randSize,0,100)/100		or 0
+
+	colors		= pickUpColor(n,colbase,colaccent,accentRatio,seed)
+
+	obj.copybuffer("cache:CF:fan","obj")
+	if isTempbuffer==1 then
+		local zw,zh = sizetype==0 and math.max(obj.w,obj.h) or obj.screen_w, sizetype==0 and math.max(obj.w,obj.h) or obj.screen_h
+		obj.setoption("dst","tmp",zw,zh)
+	end
+	for i=1,n do
+		if sizetype==0 then
+			zooming = obj.rand(0,100*sizezoom,1+seed,i)*randSize*randaf +100*(1-randSize) +100*(1-randaf)
+		elseif sizetype==1 then
+			zooming = obj.rand(100-50*sizezoom,100+50*sizezoom,1+seed,i)*randSize*randaf +100*(1-randSize) +100*(1-randaf)
+		else
+			zooming = obj.rand(100,100+100*sizezoom,1+seed,i)*randSize*randaf +100*(1-randSize) +100*(1-randaf)
+		end
+
+		ptangle = obj.rand(-360,360,2+seed,i)*randPst*randaf
+		alangle = obj.rand(math.min(0,ca),math.max(0,ca),3,i)*randAngle*randaf
+
+		obj.copybuffer("obj","cache:CF:fan")
+		obj.effect("単色化","輝度を保持する",0,"color",colors[i])
+		fan_clipping(isTempbuffer,90,alangle*eaf+(720-alangle)*naf)
+		obj.draw(0,0,0,zooming/100,1,0,0,ptangle)
+	end
+	if isTempbuffer==1 then obj.copybuffer("obj","tmp") end
+
+else
+	obj.setfont("メイリオ",20)
+	obj.load("<s40>fan_clipping.luaがありません<s>\npluginsフォルダーに導入するか、ファイルの位置を確認してください")
+end

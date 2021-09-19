@@ -1,0 +1,629 @@
+--[[
+
+画像ループの上位互換のようなスクリプトを作ってみました。
+
+Aodaruma.lua(必要に応じてrikky_module)はpluginフォルダー、もしくはAviutl.exeがあるフォルダーに、
+Repeater.anmはscriptフォルダー以下においてください。
+
+各所説明だけ記述しておきます
+
+-- 共通項目 ----------
+Moving/Drawing:
+	線の動きに関するトラックバーです。
+	ここをいじることによって、アニメーションされます。
+
+仮装バッファ:
+	仮装バッファを利用して、線を一枚の画像にすることができます。
+	(オフスクリーンと同じことが可能です。)
+
+傾きに従う:
+	線の動きに関して、動く方向に各図形が角度に従います。
+
+個別オブジェクト対応:
+	単一オブジェクトではなく、個別オブジェクトとして認識し整列させます。
+
+幅:
+	線に横幅をつけます。
+
+交互に配置:
+	線の横に関して、一列づつずらします。
+
+imageを使用[0-1]:
+	imageを使用することができます。
+	0で不使用、1で使用を決定します。
+	imageに関しては、image-savingを利用してセーブしたのちに使用してください。
+
+class:
+	imageのclass配列の索引を指定します。
+
+memory:
+	imageのclass配列の中の画像番号を指定します。
+
+option(それぞれ):
+	スクリプト制御にて利用することができます。
+
+---------------------
+---- imageについて -----
+---------------------
+
+Repeaterスクリプトは画像保存にも対応しております。
+また、それによって保存した画像を線のように描画させることもできます。
+
+基本的に、次のような構造で保存されています。
+
+     image
+       |
+-----class-----
+1, 2, 3, ...
+|
+-----memory----
+1, 2, 3, ...
+
+
+== 共通項目
+class:
+	imageのクラスを指定します。
+
+memory:
+	imageの保存されているメモリー番号を指定します。
+
+showInfo:
+	情報を表示します。
+	1で表示、0で非表示にします。
+
+save, read, clear チェック:
+	それぞれの行動を実行します。
+	チェックを入れることによって実行されます。
+==
+image-saving:
+	withAlpha:
+		透明度を保持して保存します。
+
+
+--------------------------
+その他質問、バグ等あればAodaruma(@Aodaruma_)まで
+何卒よろしくお願いたします。
+
+Repeaters script
+Developed by Aodaruma(@Aodaruma_)
+last edit: 13:14 2018/01/16
+
+logs:
+	ver 1.0
+		正式版公開。
+
+	ver 0.92
+		デバッグ(アルファ版)公開。
+		
+	ver 0.8
+		Aodaruma.luaを使うよう一部変更。
+
+	ver 0.5,0.6,0.7
+		バグつぶし
+
+	ver 0.4
+		random作成、および
+		各スクリプトにimageも使用するよう変更
+
+	ver 0.3
+		image系統作成
+
+	ver 0.2
+		sinwave、tanwave作成
+
+	ver 0.1
+		line、cycle作成
+]]
+--------------------------------------------------------
+@line
+--------------------------------------------------------
+--track0:Length,1,1000,10,1
+--track1:Angle,-720,720,45
+--track2:Interval,0,500,100
+--track3:Moving,-4000,4000,0
+--check0:Fixed,1
+--dialog:仮想バッファ/chk,local istmp=0;傾きに従う/chk,local isFollowSlope=1;個別ｵﾌﾞｼﾞｪｸﾄ対応/chk,local isMultiObjects=0;幅,local width=1;└ 交互に配置/chk,local isAlter=0;imageを使用[0-1],local isusingImage=0;└ class,local imageclass=1;└ memory,local imagememory=1;option(moving),local option=0;option(dx),local opdx=1;option(dy),local opdy=1;
+
+require("Aodaruma")
+--//////////////////// defining
+local l,a,d,m,isFixed=obj.track0==1 and 0 or obj.track0-1,obj.track1,obj.track2,obj.track3,obj.check0
+local sin,cos=function(n) return math.sin(math.rad(n)) end,function(n) return math.cos(math.rad(n)) end
+local dx,dy=cos(a),sin(a)
+local nx,ny=-sin(a),cos(a)
+local rz
+
+local reading,getIsExist=Aodaruma.images.read,Aodaruma.images.getExist
+local bn="rpt"
+
+--//////////////////// verifing
+width 		= width<1 and 0 or (width>5000 and 4999 or width-1)
+option		= type(option)~="number" and 0 or option
+m 			= m==0 and 0.001 or m
+isusingImage= isusingImage<0 and 0 or (isusingImage>1 and 1 or math.floor(isusingImage))
+local ix,iy	=
+	type(opdx)~="number" and 1 or opdx,
+	type(opdy)~="number" and 1 or opdy
+
+--//////////////////// conclusion
+if isFollowSlope==1 and istmp==0 then
+	rz=a-obj.rz-90
+elseif isFollowSlope==1 and istmp==1 then
+	rz=a
+else
+	rz=obj.rz
+end
+
+if isMultiObjects==1 then
+	-- obj.effect("画像ループ","横回数",n,"個別オブジェクト",0)
+	-- obj.effect("オブジェクト分割","横分割数",10,"縦分割数",1)
+	l = obj.num
+end
+
+
+if isFixed then
+	m=math.floor(m/d)*d
+end
+
+--//////////////////// drawing
+if istmp==1 then obj.setoption("dst","tmp",obj.screen_w,obj.screen_h) end
+if isusingImage==1 then reading(bn,imageclass.."."..imagememory) end
+for i=0,l do
+	for j=0,width do
+		if isMultiObjects==1 then
+			if obj.index==i*(width+1)+j then
+				obj.ox, obj.oy, obj.rz = 
+					(d*i*ix+m-d*(l/2))*dx +(nx*j-(width/2)*nx+j%2/2*dx*isAlter)*d	+option,
+					(d*i*iy+m-d*(l/2))*dy +(ny*j-(width/2)*ny+j%2/2*dy*isAlter)*d 	+option,
+					rz
+			end
+		else
+			obj.draw(
+				(d*i*ix+m-d*(l/2))*dx +(nx*j-(width/2)*nx+j%2/2*dx*isAlter)*d	+option,
+				(d*i*iy+m-d*(l/2))*dy +(ny*j-(width/2)*ny+j%2/2*dy*isAlter)*d 	+option,
+				0,1,1,0,0,
+				rz
+				)
+		end
+	end
+end
+if istmp==1 then obj.copybuffer("obj","tmp") end
+
+
+--------------------------------------------------------
+@cycling
+--------------------------------------------------------
+--track0:Number,1,1000,10,1
+--track1:LmtAngle,-100,360,90
+--track2:Radius,0,2000,100
+--track3:Rotating,-1280,1280,0
+--check0:Fixed,1
+--dialog:仮想バッファ/chk,local istmp=0;傾きに従う/chk,local isFollowSlope=1;個別ｵﾌﾞｼﾞｪｸﾄ対応/chk,local isMultiObjects=0;幅,local width=1;└ 交互に配置/chk,local isAlter=0;imageを使用[0-1],local isusingImage=0;└ class,local imageclass=1;└ memory,local imagememory=1;option(rotating),local option=0;option(r),local opr=1;option(lmtAng),local oplmt=1;
+
+require("Aodaruma")
+--//////////////////// defining
+local n,la,r,a,isFixed=obj.track0,obj.track1,obj.track2,obj.track3,obj.check0
+local sin,cos=function(n) return math.sin(math.rad(n)) end,function(n) return math.cos(math.rad(n)) end
+
+local rz,x,y,nx,ny,da,rand,matched
+
+local reading,getIsExist=Aodaruma.images.read,Aodaruma.images.getExist
+local bn="rpt"
+
+--//////////////////// verifing
+width 		= width<0 and 0 or (width>5000 and 5000 or width)
+option		= type(option)~="number" and 0 or option
+oplmt		= type(oplmt)~="number" and 1 or oplmt
+r 			= r + opr
+la 			= la==-100 and -99.9999 or (la==360 and 359.9999 or la)
+isusingImage= isusingImage<0 and 0 or (isusingImage>1 and 1 or math.floor(isusingImage))
+
+--//////////////////// conclusion
+if isMultiObjects==1 then
+	-- obj.effect("画像ループ","横回数",n,"個別オブジェクト",0)
+	-- obj.effect("オブジェクト分割","横分割数",10,"縦分割数",1)
+	n = math.ceil(obj.num/width)
+end
+
+if isFixed then
+	a=math.floor(a/(360/n))*(360/n)
+end
+
+--//////////////////// drawing
+if istmp==1 then obj.setoption("dst","tmp",obj.screen_w,obj.screen_h) end
+if isusingImage==1 then reading(bn,imageclass.."."..imagememory) end
+matched=false
+for i=1,n do
+	for j=0,width-1 do
+		da = a+360/n*i
+
+		if isFollowSlope==1 and istmp==0 then
+			rz=da+j%2/2*(360/n)*isAlter -obj.rz
+		elseif isFollowSlope==1 and istmp==1 then
+			rz=da+j%2/2*(360/n)*isAlter
+		else
+			rz=obj.rz
+		end
+
+		rand=Aodaruma.rand(1,100,i+n*j,false)
+		if (la<0 and rand>math.abs(la)) or (la>=0 and 360/n*i>la) then
+			x,y=
+				cos(da+j%2/2*(360/n)*isAlter)*(1+math.rad(360/n)*j)*r,
+				sin(da+j%2/2*(360/n)*isAlter)*(1+math.rad(360/n)*j)*r
+
+			if isMultiObjects==1 then
+				if obj.index==i*(width)+j-width then
+					obj.ox, obj.oy, obj.rz = 
+						x	+option,
+						y 	+option,
+						rz
+						matched=true
+				end
+			else
+				obj.draw(
+					x+option,
+					y+option,
+					0,1,1,0,0,
+					rz
+				)
+			end
+		elseif (la<0 and math.abs(la)>=98) or (la>=0 and la>=359) then
+			obj.alpha=0
+		end
+	end
+end
+if isMultiObjects==1 and matched==false then obj.alpha=0 end
+if istmp==1 then obj.copybuffer("obj","tmp") end
+
+--------------------------------------------------------
+@waveoption (required sinwave,tanwave)
+--------------------------------------------------------
+--track0:Length,1,1000,10,1
+--track1:Period,-1000,1000,45
+--track2:Interval,0,500,100
+--track3:Height,-720,720,45
+
+local l,p,i,h=obj.track0,obj.track1,obj.track2,obj.track3
+
+RPT = RPT or {}
+RPT.waveoption = RPT.waveoption or {}
+RPT.waveoption[obj.layer]={
+	length 		= l,
+	period 		= p,
+	interval 	= i,
+	height 		= h
+}
+
+
+--------------------------------------------------------
+@sinwave
+--------------------------------------------------------
+--track0:Angle,-720,720,0
+--track1:add(X),-1000,1000,0
+--track2:add(Prd),-100,100,0
+--track3:Moving,-4000,4000,0
+--check0:Fixed,1
+--dialog:仮想バッファ/chk,local istmp=0;wavetype[0-3],local wavetype=0;傾きに従う/chk,local isFollowSlope=1;個別ｵﾌﾞｼﾞｪｸﾄ対応/chk,local isMultiObjects=0;幅,local width=1;imageを使用[0-1],local isusingImage=0;└ class,local imageclass=1;└ memory,local imagememory=1;option(moving),local option=0;option(w),local opw=1;option(h),local oph=1;
+
+require("Aodaruma")
+if RPT and RPT.waveoption and RPT.waveoption[obj.layer] then
+--//////////////////// defining
+local wo=RPT.waveoption[obj.layer]
+local l,p,d,h = wo.length==1 and 0 or wo.length-1, wo.period, wo.interval, wo.height
+local da,ay,ap,m,isFixed=obj.track0,obj.track1,obj.track2,obj.track3,obj.check0
+local sin,cos=function(n) return math.sin(math.rad(n)) end,function(n) return math.cos(math.rad(n)) end
+local ca,a --=obj.getvalue("rz")
+local rz,x,y,dx,dy,fy
+
+local reading,getIsExist=Aodaruma.images.read,Aodaruma.images.getExist
+local bn="rpt"
+local pi=math.pi
+
+--//////////////////// verifing
+width 		= width<1 and 0 or (width>5000 and 4999 or width-1)
+option		= type(option)~="number" and 0 or option
+m 			= m + option
+opw,oph	=
+	type(opw)~="number" and 1 or opw,
+	type(oph)~="number" and 1 or oph
+local wt 	= type(wavetype)=="number" and (wavetype<0 and 0 or (wavetype>3 and 3 or wavetype)) or 0
+isusingImage= isusingImage<0 and 0 or (isusingImage>1 and 1 or math.floor(isusingImage))
+
+--//////////////////// conclusion
+if isMultiObjects==1 then
+	-- obj.effect("画像ループ","横回数",n,"個別オブジェクト",0)
+	-- obj.effect("オブジェクト分割","横分割数",10,"縦分割数",1)
+	l = obj.num
+end
+
+if isFixed then
+	m=math.floor(m/d)*d
+end
+
+--//////////////////// drawing
+if istmp==1 then obj.setoption("dst","tmp",obj.screen_w,obj.screen_h) end
+if isusingImage==1 then reading(bn,imageclass.."."..imagememory) end
+if d==0 then obj.alpha=0 end
+for i=0,l do
+	for j=0,width do
+		local k 	= d*i+m
+		local op 	= (1+ap*math.abs(k)/1000)		+(ay*(k)/100+oph)/h
+
+		if 		wt==0 then --正弦波(デフォルト), Sin wave(default)
+			dx,dy=
+				k 	+opw,
+				math.sin((k)/p*1.0) 							*h*op
+
+			ca 	= math.cos((k)/p*1.0)							*h*op
+
+			a 	= (math.atan(ca/p)*360.0)/(2*pi)+90
+
+		elseif	wt==1 then --三角波, Triangle wave
+			dx,dy=
+				k 	+opw,
+				(math.abs((k/p)%2-1)*2-1)						*h*op
+				--(math.acos(math.cos((k)/p*1.0))-pi/2)			*h*op
+
+			ca 	= (math.floor((k/p)%2)*4-2)	*(h/p)*op
+			--Aodaruma.log(ca)
+
+			a 	= math.deg(math.atan(ca))
+
+		elseif	wt==2 then --矩形波, Squre wave
+			dx,dy=
+				k 	+opw,
+				(math.floor((k+p/2)/p)-math.floor(k/p)*2-1)		*h*op
+
+			a 	= 90
+
+		elseif	wt==3 then --ノコギリ波, sawtooth wave
+			dx,dy=
+				k+opw,
+				k%(p+ap*math.abs(k)/100)	*(h/p)*op
+
+			ca 	= h/(p+ap*math.abs(k)/100) *op
+
+			a 	= math.deg(math.atan(ca))
+
+		end
+
+		dx,dy=
+			dx*cos(da)-dy*sin(da),
+			dx*sin(da)+dy*cos(da)
+
+		x,y=
+		 	dx +p*sin(da)*(j-(width/2)),
+			dy +p*cos(da)*(j-(width/2))
+
+		if isFollowSlope==1 and istmp==0 then
+			rz=a-obj.rz
+		elseif isFollowSlope==1 and istmp==1 then
+			rz=a
+		else
+			rz=-obj.rz
+		end
+
+
+		if isMultiObjects==1 then
+			if obj.index==i then
+				obj.ox, obj.oy, obj.rz = 
+					x,
+					y,
+					rz
+			end
+		else
+			obj.draw(
+				x,
+				y,
+				0,1,1,0,0,
+				rz
+				)
+		end
+	end
+end
+if istmp==1 then obj.copybuffer("obj","tmp") end
+
+RPT.waveoption[obj.layer]=nil
+else
+	Aodaruma.throwError("fatal","not found waveoption on this object at layer"..obj.layer.."\nwaveoptionを先に設定してください。","sinwave")
+end
+
+----------
+-- tanwaveは実装を見送りました...すみません。
+----------
+
+--------------------------------------------------------
+@random
+--------------------------------------------------------
+--track0:Width,0,3000,1920
+--track1:Height,0,3000,1080
+--track2:Number,0,1000,20,1
+--track3:Drawing,0,10000,0,1
+--check0:Fixed on Global,1
+--dialog:仮想バッファ/chk,local istmp=0;回転ﾗﾝﾀﾞﾑ[0-3],local randRotateType=0;個別ｵﾌﾞｼﾞｪｸﾄ対応/chk,local isMultiObjects=0;Z方向も有効/chk,local isDrawToZ=0;└ Depth,local d=0;imageを使用[0-1],local isusingImage=0;└ class,local imageclass=1;└ memory,local imagememory=1;seed,local seed=314;option(drawing),local option=0;
+
+require("Aodaruma")
+--//////////////////// defining
+local w,h,n,d,isFixedOnGlobal=obj.track0/2,obj.track1/2,obj.track2,obj.track3,obj.check0
+local rx,ry,rz,x,y,r,mr,imageid,imagemr,matched
+
+local reading,getIsExist,rand=Aodaruma.images.read, Aodaruma.images.getExist, Aodaruma.rand
+local bn="rpt"
+local sw,sh=obj.screen_w,obj.screen_h
+
+--//////////////////// verifing
+option		= type(option)~="number" and 0 or option
+d 			= d
+isusingImage= isusingImage<0 and 0 or (isusingImage>1 and 1 or math.floor(isusingImage))
+
+--//////////////////// conclusion
+
+
+
+--//////////////////// drawing
+if istmp==1 then obj.setoption("dst","tmp",obj.screen_w,obj.screen_h) end
+if isusingImage==1 and type(imagememory)=="number" then reading(bn,imageclass.."."..imagememory) end
+
+if n==0 then obj.alpha=0 end
+
+if isMultiObjects==1 then
+	-- obj.effect("画像ループ","横回数",n,"個別オブジェクト",0)
+	-- obj.effect("オブジェクト分割","横分割数",10,"縦分割数",1)
+	n = obj.num
+end
+
+matched=false
+for i=1,n do
+
+	if isusingImage==1 and type(imagememory)=="string" then
+		imagemr = tonumber(imagememory) or 0
+		imageid = imageclass.."."..((obj.frame+rand(0,imagemr,seed*i,isFixedOnGlobal))%imagemr+1)
+		reading(bn,imageid)
+	end
+	---------------------------
+
+	if i <= d then
+		r =  math.floor((d-i)/n)*n +i
+
+		x,y =
+			rand(-sw,sw,seed+r,	isFixedOnGlobal)/sw*w,
+			rand(-sh,sh,seed*2+r, isFixedOnGlobal)/sh*h
+
+		z = isDrawToZ==1 and rand(-d,d,seed*3+r,isFixedOnGlobal) or 0
+
+		rx,ry,rz=0,0,0
+		if randRotateType==1 then		rx = rand(0,360,seed*5+r,isFixedOnGlobal)
+		elseif randRotateType==2 then 	ry = rand(0,360,seed*6+r,isFixedOnGlobal)
+		elseif randRotateType>=3 then 	rz = rand(0,360,seed*7+r,isFixedOnGlobal)
+		end
+
+		if isMultiObjects==1 then
+			if obj.index==i-1 then
+				obj.ox, obj.oy, obj.oz, obj.rx, obj.ry, obj.rz = x,y,z,rx,ry,rz
+				matched=true
+			end
+		else
+			obj.draw(
+				x +option,
+				y +option,
+				z,
+				1,1,
+				rx,ry,rz
+			)
+		end
+	elseif d==0 then
+		obj.alpha=0
+	end
+end
+if isMultiObjects==1 and matched==false then obj.alpha=0 end
+if istmp==1 then obj.copybuffer("obj","tmp") end
+
+
+--------------------------------------------------------
+@image-saving
+--------------------------------------------------------
+--track0:class,1,100,1,1
+--track1:memory,1,100,1,1
+--track2:withAlpha,0,1,1,1
+--track3:showInfo,0,1,1,1
+--check0:save,0
+
+--//////////////////// defining
+require("rikky_module")
+require("Aodaruma")
+local c,m,isSaveWithAlpha,isShowInfo=obj.track0,obj.track1,obj.track2==1 and true or false,obj.track3==1 and true or false
+local bn="rpt"
+local checkRm=Aodaruma.modules.checkRikkyModule
+local saving=Aodaruma.images.save
+
+--//////////////////// drawing
+if obj.check0 then saving(bn,m.."."..c,isSaveWithAlpha) end
+
+--//////////////////// showing info
+if isShowInfo then
+	obj.setfont("メイリオ",60)
+	obj.setfont("Koruri Bold",60)
+	local tx
+	if obj.check0 then tx="<#bbd716>saving now" else tx="<#f67280>not saving now" end
+	obj.load(tx.."\n<#><s30>try saving at <s40>class["..c.."] --> memory["..m.."];\n<s30>using rikkymodule: <#6f8285>"..tostring(checkRm()).."<#>;")
+end
+
+--------------------------------------------------------
+@image-reading
+--------------------------------------------------------
+--track0:class,1,100,1,1
+--track1:memory,1,100,1,1
+
+--track3:showInfo,0,1,1,1
+--check0:read,0
+
+--//////////////////// defining
+require("rikky_module")
+require("Aodaruma")
+local c,m,isShowInfo=obj.track0,obj.track1,obj.track3==1 and true or false
+local bn="rpt"
+local checkRm=Aodaruma.modules.checkRikkyModule
+local reading,getIsExist=Aodaruma.images.read,Aodaruma.images.getExist
+
+--//////////////////// drawing
+if obj.check0 then 
+	reading(bn,m.."."..c)
+	obj.draw()
+end
+
+--//////////////////// showing info
+if isShowInfo then
+	obj.setfont("メイリオ",60)
+	obj.setfont("Koruri Bold",60)
+	local tx
+	local f=getIsExist(bn,m.."."..c)
+	if obj.check0 then
+		if f==1 then
+			tx="<#bbd716>reading now"
+		else
+			tx="<#ccb914>no image saved at there"
+		end
+	else
+		tx="<#f67280>not reading now"
+	end
+
+	obj.load(tx.."\n<#><s30>try reading at <s40>class["..c.."] --> memory["..m.."];\n<s30>using rikkymodule: <#6f8285>"..tostring(checkRm()).."<#>;")
+	obj.draw()
+end
+
+--------------------------------------------------------
+@image-clearing
+--------------------------------------------------------
+--track0:class,1,100,1,1
+--track1:memory,1,100,1,1
+
+--track3:showInfo,0,1,1,1
+--check0:clear,0
+
+--//////////////////// defining
+require("rikky_module")
+require("Aodaruma")
+local c,m,isShowInfo=obj.track0,obj.track1,obj.track3==1 and true or false
+local bn="rpt"
+local checkRm=Aodaruma.modules.checkRikkyModule
+local clearing,getIsExist=Aodaruma.images.clear,Aodaruma.images.getExist
+
+--//////////////////// drawing
+if obj.check0 then clearing(bn,m.."."..c) end
+
+--//////////////////// showing info
+if isShowInfo then
+	obj.setfont("メイリオ",60)
+	obj.setfont("Koruri Bold",60)
+	local tx
+	local f=getIsExist(bn,m.."."..c)
+	if obj.check0 then
+		if f==0 then
+			tx="<#bbd716>cleared"
+		else
+			tx="<#ccb914><s50>couldn't cleared by <#ca1028>something error"
+		end
+	else
+		tx="<#f67280>not cleared now"
+	end
+	obj.load(tx.."\n<#><s30>try clearing at <s40>class["..c.."] --> memory["..m.."];\n<s30>using rikkymodule: <#6f8285>"..tostring(checkRm()).."<#>;")
+end

@@ -1,0 +1,42 @@
+--[[
+Modulator - ver.1.0
+
+similar script of an after effects plugin
+https://vimeo.com/367299058
+
+scale: line interval scale
+drawing: the number of lines in a bundle
+interval: an interval between bundles
+width: line width (px)
+type: the direction a line follows
+threshold: a threshold of pixel counting
+opacity(max): an opacity of white lines
+opacity(min): an opacity of black lines
+
+Developed by Aodaruma(@Aodaruma_)
+Edited at 14:55 2020/06/29
+
+]]
+
+--track0:scale,0.5,100,5
+--track1:drawing,1,100,10,1
+--track2:interval,1,100,2,1
+--track3:width,1,10,2,1
+--check0:invert,0
+--dialog:type(0-4),local type=0;threshold,local threshold=255;opacity(max),local opaMax=256;opacity(min),local opaMin=256;
+
+package.cpath=package.cpath..";"..obj.getinfo"script_path":gsub("[^\\]+\\$","?.dll")
+require("Modulator")
+
+local scale,drawing,interval,width=obj.track0,obj.track1,obj.track2,obj.track3
+if Modulator then
+    local d,w,h = obj.getpixeldata()
+    Modulator.main(d,w,h,scale,threshold,drawing,interval,width,type,obj.check0,opaMax,opaMin)
+    obj.putpixeldata(d)
+    obj.setoption("antialias",1)
+else
+    obj.setfont("メイリオ",50)
+    local msg = "Modulator.anm, layer"..obj.layer..":\nModulator.dllがexedit.aufがあるフォルダー以下に見つかりませんでした。\nスクリプトが所定の場所にあるか確認してください。"
+    obj.load(msg)
+    error(msg)
+end

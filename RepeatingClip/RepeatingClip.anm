@@ -1,0 +1,123 @@
+--[[
+
+RepeatingClip
+ver. 1.0
+
+クリッピングしながら画像ループする、というのにちょっと便利な機能を付け足したぐらいのスクリプトです。
+必要モジュールなしです。
+
+============================================================
+数				-	画像ループする数です
+クリッピング 		-	クリッピング数です
+変化率 			-	描画数ごとのクリッピングの変化率です
+方向				-	描画方向です。1~4は中心に向いて、5~8は外側へ向いてクリッピングします
+
+==========
+両方向 			-	両方向へ描画します。
+					両方このチェックを入れた状態で、方向を変えても変化がないように見えるのは、両方向だから。
+
+==========
+空白				-	描画ごとの空白です
+変化率空白を無効	-	変化率で生じた描画間の変化の調整を無効にします。	
+回転に付随		-	オブジェクトのパラメーターの一つ「回転」に基づいて全体回転します。
+単色化			-	クリッピングしている描画画像に単色化をかけます
+└ Color　		-	単色化の色を選択します
+└ GradColor 	-	単色化のグラデーション色を選択します。この色は外側への色で、空欄にすると無効になります
+仮想バッファ 		-	クリッピング画像を仮想バッファに描画します
+└ バッファW　		-	仮想バッファの横サイズを指定します。
+└ バッファH		-	仮想バッファの縦サイズを指定します。
+============================================================
+
+ご不明な点や追加・提案、バグ等はAodaruma(@Aodaruma_)までお知らせください。
+派生や二次配布などもご連絡お願いします。
+
+-- Log ----------
+ver 1.0
+	- 作成。
+
+-----------------
+
+Developed by Aodaruma_
+Twitter: @Aodaruma_
+LastEdit: 1:48 2018/07/28
+]]
+
+--track0:数,0,200,10,1
+--track1:クリッピング,0,2000,30
+--track2:変化率(%),-300,300,0
+--track3:方向,1,8,1,1
+--check0:両方向,0
+--dialog:空白,local blank=5;変化率空白を無効/chk,local isDisableCB=0;回転に付随/chk,local isFollowRotation=1;単色化/chk,local isCol=0;└ Color/col,local col=0xdddddd;└ GradColor/col,local gcol=0x000000;仮想バッファ/chk,local isBuffer=0;└ バッファW,local bufferW=obj.screen_w;└ バッファH,local bufferH=obj.screen_h;
+
+local n, clipping, c, d, isBoth = obj.track0, obj.track1, obj.track2/100, obj.track3, obj.check0
+local x,y=0,0 --obj.ox,obj.oy
+local w,h=obj.w,obj.h
+local directions = {"上","下","左","右","下","上","右","左"}
+blank = blank or 0
+
+-- define drawing
+local drawing = function(n,clipping,c,d,isBoth)
+	local dis,rx,ry
+	local r = isBoth and 1 or 0
+	
+	for i=1,n do
+		dis = clipping*(c/2*i*(1-isDisableCB)+1) -blank
+
+
+		-- load
+		if isBuffer==1 then obj.setoption("dst", "tmp") end --tempbuffer
+		obj.copybuffer("obj","cache:RC")
+
+		-- colorize
+		if isCol==1 and col then
+			gcol = gcol or col
+			local mcol,mgcol = {RGB(col)},{RGB(gcol)}	-- num to table
+			local af, uf = (i/n), 1-(i/n)
+			local rcol = RGB(							-- changing RGB to gradate
+				mcol[1]*uf +mgcol[1]*af,
+				mcol[2]*uf +mgcol[2]*af,
+				mcol[3]*uf +mgcol[3]*af
+				)
+			obj.effect("単色化","color",rcol,"輝度を保持する",0)
+		end
+
+		-- clipping
+		obj.effect("クリッピング",directions[(d +4*r-1)%8+1],clipping*(c*i+1),"中心の位置を変更",1)
+		rx,ry =
+			((w-dis)*i +clipping/2) *((d+r)%2*2-1) *(1-math.ceil(d/2)%2),
+			((h-dis)*i +clipping/2) *((d+r)%2*2-1) *(math.ceil(d/2)%2)
+		if isFollowRotation==1 then
+			local t=obj.rz/180*math.pi
+			local mx, my=rx, ry
+			rx = mx*math.cos(t) - my*math.sin(t)
+			ry = mx*math.sin(t) + my*math.cos(t)
+		end
+
+		-- drawing
+		obj.draw(
+			x + rx,	y + ry
+		)
+	end
+end
+
+-- save
+obj.copybuffer("cache:RC","obj")
+
+-- tempbuffer
+if isBuffer==1 then 
+	bufferW, bufferH = bufferW or obj.screen_w, bufferH or obj.screen_h
+	if obj.index==0 then obj.setoption("dst", "tmp", bufferW, bufferH) else obj.setoption("dst", "tmp") end
+end
+
+-- draw original
+obj.draw()
+
+-- draw items
+drawing(n,clipping,c,d)
+if isBoth then drawing(n,clipping,c,d,isBoth) end
+
+-- draw tempbuffer
+if isBuffer==1 and obj.index==obj.num-1 then
+	obj.load("tempbuffer")
+	obj.draw()
+end
