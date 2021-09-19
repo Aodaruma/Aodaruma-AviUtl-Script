@@ -17,7 +17,6 @@ Developed by Aodaruma(@Aodaruma_)
 Edited at 14:55 2020/06/29
 
 ]]
-
 --track0:ｽｹｰﾙ,0.5,100,5
 --track1:描画数,1,100,10,1
 --track2:間隔数,0,100,2,1
@@ -25,18 +24,20 @@ Edited at 14:55 2020/06/29
 --check0:反転,0
 --dialog:方向(0-4),local type=0;閾値,local threshold=255;透明度(白),local opaMax=256;透明度(黒),local opaMin=256;
 
-package.cpath=package.cpath..";"..obj.getinfo"script_path":gsub("[^\\]+\\$","?.dll")
+package.cpath = package.cpath .. ";" .. obj.getinfo "script_path":gsub("[^\\]+\\$", "?.dll")
 require("Modulator")
 
-local scale,drawing,interval,width=obj.track0,obj.track1,obj.track2,obj.track3
+local scale, drawing, interval, width = obj.track0, obj.track1, obj.track2, obj.track3
 if Modulator then
-    local d,w,h = obj.getpixeldata()
-    Modulator.main(d,w,h,scale,threshold,drawing,interval,width,type,obj.check0,opaMax,opaMin)
+    local d, w, h = obj.getpixeldata()
+    Modulator.main(d, w, h, scale, threshold, drawing, interval, width, type, obj.check0, opaMax, opaMin)
     obj.putpixeldata(d)
-    obj.setoption("antialias",1)
+    obj.setoption("antialias", 1)
 else
-    obj.setfont("メイリオ",50)
-    local msg = "Modulator.anm, layer"..obj.layer..":\nModulator.dllがexedit.aufがあるフォルダー以下に見つかりませんでした。\nスクリプトが所定の場所にあるか確認してください。"
+    obj.setfont("メイリオ", 50)
+    local msg =
+        "Modulator.anm, layer" ..
+        obj.layer .. ":\nModulator.dllがexedit.aufがあるフォルダー以下に見つかりませんでした。\nスクリプトが所定の場所にあるか確認してください。"
     obj.load(msg)
     error(msg)
 end
