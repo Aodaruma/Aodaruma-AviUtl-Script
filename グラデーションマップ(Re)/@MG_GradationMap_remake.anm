@@ -1,0 +1,103 @@
+@Saving
+--track0:保存場所,1,100,1,1
+--check0:透明化,0
+
+local saving,isAlpha=obj.track0,obj.check0
+local bn="GM"
+
+obj.copybuffer("cache:"..bn..saving,"obj")
+if isAlpha then obj.alpha=0 end
+
+@Reading/Effecting
+--track0:読込場所,0,100,1,1
+--track1:色相変更,-360,360,0,0.1
+--track2:取得高さ(%),0,100,50
+--track3:shift,-5000,5000,0
+--check0:looping,0
+--dialog:$ﾌｧｲﾙ1,local imagepath="";反転/chk,local inverting=0;
+
+---------rikkyさんの「rikky_moduleの使い方」から引用---------------------------------
+if rikky_module == nil then
+	local CPATH = {}
+	local cpath = package.cpath .. ";"
+	local n
+	while(1)do
+		n = cpath:find(";")
+		if n then
+			CPATH[#CPATH + 1] = cpath:sub(1, n - 1)
+			cpath = cpath:sub(n + 1, #cpath)
+		else
+			break
+		end
+	end
+	if not CPATH[2]:find("script\\?.dll") then
+		CPATH[3]=CPATH[2]:sub(1, CPATH[2]:find("\\script\\")) .. "script\\?.dll"
+		package.cpath = package.cpath .. ";" .. CPATH[3]
+	end
+	for i=1,#CPATH do
+		local f=io.open(CPATH[i]:gsub("?", "rikky_module"),"rb")
+		if f then
+			require("rikky_module")
+			f:close()
+			break
+		end
+	end
+end
+--------------------------------------------------------
+if rikky_module then
+	rikky_module.file(1)
+end
+
+local bn = "GM"
+local reading = obj.track0
+local shift = obj.track3
+local w,h,data,grad,gx
+local heightp = obj.track2/1.00001
+
+local x,y = obj.ox+obj.x, obj.oy+obj.y
+
+-- if obj.check0 then
+--オブジェクト白黒化
+
+	obj.effect("色調補正", "彩度", 0.0)
+
+	obj.effect("反転", "輝度反転", inverting) 
+	
+	obj.copybuffer("tmp","obj")
+
+--グラデーション色情報配列化
+
+	if imagepath and reading==0 then
+		obj.load("image", imagepath)
+		local w,h=obj.getpixel()
+		if w==0 and h==0 then
+			obj.setfont("メイリオ",40)
+			obj.load("指定された画像ファイルが無効です\n正しいパス、またはファイルかどうか確認してください。")
+			error("given invalid file path")
+		end
+	else
+		obj.copybuffer("obj","cache:"..bn..reading)
+	end
+	obj.effect("色調補正", "色相", obj.track1)
+
+	w,h=obj.getpixel()
+	grad = {}
+	for gx = 1, 256 do
+		if obj.check0 then
+			grad[gx], a1 = obj.getpixel(math.floor(math.acos(math.cos(w/256*(gx-1)/w*math.pi+shift/(math.pi/2*100)))/math.pi*w), math.floor(h/100*heightp), "col")
+		else
+			grad[gx], a1 = obj.getpixel(math.floor(w/256*(gx-1)+shift)%w, math.floor(h/100*heightp), "col")
+		end
+	end
+
+--オブジェクトピクセル置き換え
+
+	obj.copybuffer("obj","tmp")
+
+	data, w, h = obj.getpixeldata()
+	require("gradationmapping")
+	data = gradationmapping.func(data, w, h, grad)
+	obj.putpixeldata(data)
+	obj.ox,obj.oy = x,y
+
+-- end

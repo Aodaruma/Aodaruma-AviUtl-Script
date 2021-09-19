@@ -1,0 +1,126 @@
+--[[
+なんかポップ用のやつを作りました。
+rikky氏のdll、rikky_moduleが必要です。
+
+たぶん説明はいらないので、とりあえず触ってみるべし。
+
+基本的にReadのダイアログは縁取りから引用したものです。
+格納場所で保存し、読込場所で取り出します。
+Readで読み込むとWriteデータは自動的に消去してしまいますので、その場合はReadのダイアログにチェックを入れてください。
+何か質問があればtwitterまで。
+
+あと、テキスト使用の時若干バグります。
+
+version -
+	ver1.0 - 作成。
+
+LastEdit: 17:38 2017/03/09
+Developed by Aodaruma
+twitter: @Aodaruma_
+]]--
+
+------------------------------------------------------------------------------------------------
+@Write
+------------------------------------------------------------------------------------------------
+--track0:格納場所,1,100,1,1
+--check0:保存,0
+
+require("rikky_module")
+rikky_module.image("w","NKDS:"..obj.track0)
+local i,x,y,t,path,found
+local finish=false
+NKDS = NKDS or {}
+if(obj.num~=1) then
+	--[[
+	個別オブジェクト対応するのがめんどくさかったのでエラーのみの処理...
+	もしどうしても個別オブジェクトでの抜き出し縁取りが使いたかったら
+	rikky氏の「テキスト一枚化」というスクリプトを使ってくだされ...
+
+	個別オブジェクト対応はバージョンアップに期待してちょ( ´・ω・`)
+
+
+	---------- 書きかけ ---------
+	if(obj.index == 0) then
+		path=obj.getinfo("script_path")
+		while(string.sub(path,#path,#path)=="\\") do
+			path=string.sub(path,1,#path-1)
+		end
+			path=path.."\\テキスト一枚化.anm"
+		local t=io.open(path,"r")
+		if t then
+			t:close()
+			found = true
+		end
+	end
+
+	if(found) then
+		require("テキスト一枚化")
+		if obj.index == (obj.num-1) then
+			x,y=obj.x,obj.y
+			finish = true
+		end
+	end
+	----------------------------------
+	]]--
+	obj.setfont("メイリオ",30)
+	obj.load(
+		"error"
+		.."\nこのオブジェクトは個別オブジェクトです。"
+		.."\n現バージョンのこのスクリプトは現在個別オブジェクトには対応しておりません。"
+		.."\nどうしても使用する場合は、rikky氏の「テキスト一枚化」スクリプトの使用を"
+		.."\n推奨いたします。"
+		)
+else
+	x,y=obj.getvalue("x"),obj.getvalue("y")
+	finish = true
+end
+if(finish) and (obj.check0) then NKDS[obj.track0]={x=x, y=y} end
+
+
+
+------------------------------------------------------------------------------------------------
+@Read
+------------------------------------------------------------------------------------------------
+--track0:読込場所,1,100,1,1
+--track1:サイズ,0,500,10,1
+--track2:X,-2000,2000,0
+--track3:Y,-2000,2000,0
+--check0:読込,0
+--dialog:ぼかし,local blur=0;clearする/chk,local isclear=1;
+
+require("rikky_module")
+local i,n,x,y
+local theta = obj.getvalue("rz")*-1
+local sin,cos=function(n) return math.sin(math.rad(n)) end,function(n) return math.cos(math.rad(n)) end
+blur = (type(blur)=="number" and blur) or 0
+if(rikky_module) and (NKDS[obj.track0]) and (obj.check0) then -- rikky_moduleはテーブル
+
+	obj.setoption("dst","tmp",obj.w,obj.h)
+	obj.draw()
+
+	obj.setoption("dst","tmp")
+	rikky_module.image("r","NKDS:"..obj.track0)
+	obj.effect("縁取り","サイズ",obj.track1,"ぼかし",blur)
+	obj.setoption("blend","alpha_sub")
+
+	-- if(type(NKDS[obj.track0].x)=="table") then -- 一つ調べれば必然的にテーブルと判断できるが、現在書出し中
+	-- 	n = #NKDS[obj.track0].x
+	-- 	obj.draw(
+	-- 		NKDS[obj.track0].x-obj.getvalue("x")+obj.track0,
+	-- 		NKDS[obj.track0].y-obj.getvalue("y")+obj.track1
+	-- 	)
+	-- else
+		x,y =
+			NKDS[obj.track0].x-obj.getvalue("x")+obj.track2,
+			NKDS[obj.track0].y-obj.getvalue("y")+obj.track3
+		x,y =
+			x*cos(theta)-y*sin(theta),
+			x*sin(theta)+y*cos(theta)
+
+		obj.draw(x,y,0,1,1,0,0,theta)
+	-- end
+	obj.load("tempbuffer")
+	obj.draw()
+
+	if(isclear==1) then rikky_module.image("c","NKDS:"..obj.track0) end
+end

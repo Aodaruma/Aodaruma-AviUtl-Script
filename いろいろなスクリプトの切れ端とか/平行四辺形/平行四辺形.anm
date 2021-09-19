@@ -1,0 +1,26 @@
+--[[
+	すっごーい！なにこれなにこれー！
+	って感じの短いコードです。気づいたら作ってました。
+
+	説明はいらないです。いらないです。
+	
+	Developed by Aodaruma
+	Twitter: @Aodaruma_
+	LastEdit: 22:21 2017/04/14
+]]
+
+--track0:affect%,0,100,100,0.01
+--dialog:pos,figurepos={100,100,-200,100};
+
+obj.setanchor("figurepos",2,"star")
+local af=obj.track0/100
+local uf=1-af
+local x0,y0,x1,y1=
+	figurepos[1],figurepos[2],
+	figurepos[3],figurepos[4]
+obj.drawpoly(
+	x0*af +obj.w/2*uf,		y0*af +obj.h/2*uf,		0,
+	x1*af -obj.w/2*uf,		y1*af +obj.h/2*uf,		0,
+	x0*-1*af -obj.w/2*uf,	y0*-1*af -obj.h/2*uf,	0,
+	x1*-1*af +obj.w/2*uf,	y1*-1*af -obj.h/2*uf,	0
+	)

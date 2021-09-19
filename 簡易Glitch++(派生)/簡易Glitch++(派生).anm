@@ -1,0 +1,82 @@
+--[[
+Derived by Aodaruma
+
+このscriptはNu're氏の簡易Glitch+の派生です。
+元script: https://twitter.com/sdkd500/status/706432950859112448
+
+Last Edit: 13:31 2016/09/23
+
+(改)は元から改訂、(新)は新しく書かれたものです。
+
+◇説明◇◇◇◇◇◇◇◇◇◇◇◇◇
+
+・Glitch
+	グリッチの数です。最大で30個出せます(それ以上は重たすぎるので割愛。)
+
+・速度 (改)
+	何フレームごとに描画するか設定。最大1000フレームごとです。
+
+・ずれ度 (新)
+	元の座標からのX,Y方向のずらし度です。
+
+・シード値
+	ランダムのシードを設定することができます。
+
+・サイズ (新)
+	グリッチする際のマスクのサイズを設定することができます
+	配列は左からランダムの最小値、ランダムの最大値。
+
+・マスク位置 (新)
+	マスクのランダム位置を指定することができます。
+	配列は左からXランダム座標最小値、Xランダム座標最大値、Yランダム座標最小値、Yランダム座標最大値。
+
+・元を描画 (新)
+	元のオブジェクトを描画するか設定できます。チェックで描画。
+
+◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇
+]]--
+
+--track0:Glitch,0,30,5,1
+--track1:描画速度,0,1000,20,1
+--track2:ずれ度,0,500,200,1
+--dialog:ｼｰﾄﾞ値,local seed=0;サイズ,local size={20,600};マスク位置,local maskcoor={obj.w*-1,obj.w,obj.h*-1,obj.h};元を描画/chk,local isDrawOri=1;
+local g1=obj.track0
+local t=math.floor(obj.frame/obj.track1)
+local zure=obj.track2
+
+
+
+obj.draw()
+obj.effect()
+obj.setoption("drawtarget","tempbuffer",obj.screen_w,obj.screen_h)
+
+if(isDrawOri==1) then
+	obj.draw()
+end
+
+obj.setoption("drawtarget","framebuffer")
+for i=0,g1 do
+if(obj.rand(0,1,seed+100)==1) then
+	obj.effect("色ずれ","ずれ幅",obj.rand(0,g1/2,seed,t),"type",4)
+end
+
+if(obj.rand(0,1,seed+10)==1) then
+	obj.effect("色調補正","明るさ",obj.rand(100-g1,100+g1,seed,t),"色相",obj.rand(0,360,seed,t),"輝度",obj.rand(100,120,0,t),"ｺﾝﾄﾗｽﾄ" ,obj.rand(100,120))
+end
+
+if(obj.rand(0,1,seed+1)==1) then
+	obj.effect("ぼかし","範囲",obj.rand(0,g1/5,seed,t),"光の強さ",30)
+end
+
+obj.load("tempbuffer",0,0,obj.screen_w,obj.screen_h)
+obj.effect("色ずれ","ずれ幅",obj.rand(0,5+g1,i+seed,t),"type",4)
+if(i%2==1) then
+obj.effect("モザイク","サイズ",obj.rand(0,10+g1,i+seed,t))
+end
+
+obj.effect("色調補正","ｺﾝﾄﾗｽﾄ" ,obj.rand(100-g1,100+g1,i+seed,t))
+obj.effect("マスク","X",obj.rand(maskcoor[1]/2,maskcoor[2]/2,i+seed+8,t),"Y",obj.rand(maskcoor[3]/2,maskcoor[4]/2,i+seed+3,t),"サイズ",obj.rand(size[1],size[2],i+seed,t),"縦横比",obj.rand(0,-100,i+seed,t))
+--obj.effect("色調補正","色相",obj.rand(0,360,i,t))
+
+obj.draw(obj.rand(-1*zure,zure,i+seed+3,t),obj.rand(-1*zure,zure,i+seed+2,t))
+end

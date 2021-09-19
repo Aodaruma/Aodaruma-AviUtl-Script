@@ -1,0 +1,13 @@
+--track0:A,-99999,99999,0
+--track1:B,-9999,9999,0,1.11
+--track2:C,-100,100,0,1
+--track3:D,0,100,0
+
+local layer=obj.layer
+if(VT==nil) then VT={} end
+
+if(VT["layer"..layer]==nil) then VT["layer"..layer]={} end
+VT["layer"..layer][1]=obj.track0
+VT["layer"..layer][2]=obj.track1
+VT["layer"..layer][3]=obj.track2
+VT["layer"..layer][4]=obj.track3

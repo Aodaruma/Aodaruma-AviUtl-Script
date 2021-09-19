@@ -1,0 +1,51 @@
+--[[
+This script developed on rikky_module ver1.2c(snapshot)
+sample script by Aodaruma.
+
+contents: Glass Refrection on Aviutl.
+warning - this sample script developed on beta module.
+		  any damages by using this script can not accept to script and module developers.
+
+Update date: 14:36 2017/12/21
+]]
+--track0:Size,0,2000,200
+--track1:Blur,0,100,10,1
+--track2:Rfctive,0,1,0.5,0.01
+--track3:offsetZ,0,500,50
+--dialog:revAll/chk,local reverse=0;revUp/chk,local reverseUp=0;revSide/chk,local reverseSide=1;boundary[1-3],local boundary=1;useColor/chk,local isUsingCol=0;color/col,local color=0xffffff;
+
+require("rikky_module")
+
+obj.effect()
+local init={
+	--color		= 0xdf4c94,
+	reverse 	= reverse,
+	reverseUp 	= reverseUp,
+	reverseSide = reverseSide,
+	blur		= obj.track1,
+	refractive	= obj.track2,
+	offsetZ		= obj.track3,
+	boundary	= ""
+}
+
+if boundary<=1 then
+	init.boundary 	= "loop"
+elseif boundary==2 then
+	init.boundary	= "inverted"
+end
+
+if isUsingCol==1 then
+	init.color = color
+end
+
+
+rikky_module.glassdraw_init(init)
+l = obj.track0*obj.getvalue("zoom")/100
+
+rikky_module.glassdraw(-l,-l,-l,  l,-l,-l,  l, l,-l, -l, l,-l, 0,0, obj.w,0, obj.w,obj.h, 0,obj.h)
+rikky_module.glassdraw( l,-l, l, -l,-l, l, -l, l, l,  l, l, l, 0,0, obj.w,0, obj.w,obj.h, 0,obj.h)
+rikky_module.glassdraw(-l, l,-l,  l, l,-l,  l, l, l, -l, l, l, 0,0, obj.w,0, obj.w,obj.h, 0,obj.h)
+rikky_module.glassdraw( l,-l,-l, -l,-l,-l, -l,-l, l,  l,-l, l, 0,0, obj.w,0, obj.w,obj.h, 0,obj.h)
+rikky_module.glassdraw( l,-l,-l,  l,-l, l,  l, l, l,  l, l,-l, 0,0, obj.w,0, obj.w,obj.h, 0,obj.h)
+rikky_module.glassdraw(-l,-l, l, -l,-l,-l, -l, l,-l, -l, l, l, 0,0, obj.w,0, obj.w,obj.h, 0,obj.h)
+obj.setoption("focus_mode","fixed_size")

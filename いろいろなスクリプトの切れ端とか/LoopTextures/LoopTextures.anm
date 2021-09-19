@@ -1,0 +1,45 @@
+--[[
+簡易版テクスチャループです。
+rikky_moduleが入っていると、$ﾌｫﾙﾀﾞで「$」を入力したとき、ダイアログが出てくれます。
+
+LastEdit: 17:11 2018/05/13
+Developed by Aodaruma(@Aodaruma_)
+]]
+
+--track0:0づけ,0,1,0,1
+
+--track2:skip,0,50,2,1
+--track3:random,0,1,0,1
+--check0:パスを表示する,1
+--dialog:$ﾌｫﾙﾀﾞ1,local path="";拡張子,local ext="jpg";0を最初とする/chk,local isAddZeroAhead=0;ランダムを繰り返す/chk,local isLoopRand=1;
+
+require("rikky_module")
+if rikky_module then rikky_module.fold(1) end
+
+obj.setfont("メイリオ",50,2,0xdddddd,0x555555)
+if(path~="") and (ext~="") then
+	local isAddZeroAhead=obj.track0 and true or false
+	local skipflame,israndom=obj.track2,obj.track3
+	local files=rikky_module.dir(path,ext)
+	local n=#files
+
+	if n==0 then
+		obj.load("指定された拡張子がフォルダー内に存在しません。\nダイアログを開いて指定している拡張子を確認してください。")
+	else
+		local f=math.floor(obj.frame/skipflame)
+		local a=obj.check0 and 0 or 1
+		local r=(f%n+1)*(1-israndom)+obj.rand(a,n,f%n,math.ceil(f/n)*isLoopRand)*(israndom)
+		local file=files[r]
+		if(obj.check0==false) then
+			obj.load("image",file)
+		else
+			obj.setfont("メイリオ",30)
+			obj.load("指定されたパス:\n"..file.."\n<s20>「パスを表示する」のチェックを外すと画像を表示します")
+		end
+		if(obj.getinfo("saving")==false) then debug_print("load file path: "..file..";") end
+	end
+elseif(path=="") then
+	obj.load("パスが設定されていません。\nダイアログを開いて設定してください。\n<s15>rikky_moduleを持っている場合は、「$ﾌｫﾙﾀﾞ1」に\n「$」と入力してみてください。")
+elseif(ext=="") then
+	obj.load("拡張子が設定されていません。\nダイアログを開いて設定してください。")
+end

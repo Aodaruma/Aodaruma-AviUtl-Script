@@ -1,0 +1,14 @@
+--track0:A,-99999,99999,0
+--track1:B,-9999,9999,0,0.01
+--track2:C,-100,100,0,1
+--track3:D,0,100,0
+--dialog:Ši•ÊŠi”[,local save=1;
+
+local layer=obj.layer
+if(type(VT)~="table") then VT={} end
+
+if(VT["layer"..layer]==nil) then 	VT["layer"..layer]={}	end
+if(VT[layer]==nil) then 			VT[layer]={} 			end
+VT["layer"..layer][save], VT[layer][save]={}, {}
+VT["layer"..layer][save]	=	{obj.track0, obj.track1, obj.track2, obj.track3}
+VT[layer][save]				=	{obj.track0, obj.track1, obj.track2, obj.track3}

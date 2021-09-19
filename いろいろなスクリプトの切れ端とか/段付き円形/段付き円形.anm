@@ -1,0 +1,35 @@
+
+--track0:図形数,0,750,30,1
+--track1:半径,0,10000,200
+--track2:段数,1,500,3,1
+--track3:上下間隔,0,2000,10
+--check0:図形を別にする,0
+--dialog:図形の種類/fig,local figtype="円"; 段違い,local dgf=0; 図形サイズ,local size=100; 色/col,local col=0xffffff; ライン幅,local line=4000;
+
+local dif = obj.track3
+local num = obj.track0
+local r = obj.track1
+local difnum = obj.track2
+
+local i,j
+local a=function(ix)
+	return math.rad(360*ix/num)+obj.getvalue("ry")
+end
+
+if(obj.check0) then
+	obj.load("figure",figtype,col,size,line)
+end
+
+
+
+for i=1,difnum do
+     for j=1,num do
+     obj.draw(
+        obj.ox+(math.sin(a(j+dgf/20*i))*r),                -- x座標
+        obj.oy-(difnum/2+0.5-i)+dif*(i-difnum/2-0.5),   -- y座標
+        obj.oz+(math.cos(a(j+dgf/20*i))*r),                -- z座標
+	1,1,0,
+	360*j/num                                       --y軸回転
+     )
+     end
+end

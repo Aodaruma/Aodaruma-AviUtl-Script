@@ -1,0 +1,252 @@
+--[[
+
+ver1.1
+
+ワイプに特化した、斜めクリッピングの拡張版みたいなものです。
+基本的に外部モジュールは要りません。
+
+OptionはMainより上に付けてください。
+あと、個別オブジェクトだとフォントによってはinfoが結構ずれるところがあります。
+
+◇◇◇ 以下機能説明 ◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇
+
+[ Main ]
+	AF-1(%):
+		一つ目の斜めクリッピングを操作します。
+		AF-2より上位にあります。
+	
+	AF-2(%):
+		二つ目の斜めクリッピングを操作します。
+		AF-1が0%だといくら動かしても見えません。
+
+	Angle:
+		斜めクリッピングの角度を操作します。
+
+	Width:
+		斜めクリッピングの幅を操作します。
+		- 各値に置いての説明 -------
+		[<0のとき (~-1)]:
+			斜めクリッピングのマイナスの値を入力したみたいな感じになります。
+		
+		[=0のとき(0)]:
+			角度によって自動で幅を調整します。
+			挙動は>0の時と同じです。
+
+		[>0のとき(1~)]:
+			斜めクリッピングを左右でワイプするような挙動を示します。
+		----------------------------
+
+	info:
+		チェックを入れると、クリッピングの状態を表示します。
+
+[ Option ]:
+	X:
+		クリッピングの中心Xを指定します。
+
+	Y:
+		クリッピングの中心Yを指定します。
+
+	Blur:
+		境界に斜めクリッピングのぼかしをかけます。
+
+
+◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇
+
+ただのワイプ機能だけだと、しょぼくれた感じがするので、周囲または境界で任意のエフェクトをかけたバージョンも公開できればと思います。
+
+
+◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆
+--- version ---
+v1.1:
+	拡大縮小するとき、infoおよびクリッピングがずれるバグを修正。
+
+v1.0: 
+	作成。
+
+Last Edit: 13:09 2018/09/23
+
+Developed by Aodaruma
+twitter: @Aodaruma_
+]]
+------------------------------------------------------------
+@Main
+------------------------------------------------------------
+--track0:AF-1(%),0,100,100
+--track1:AF-2(%),0,100,0
+--track2:Angle,-720,720,-90
+--track3:Width,-2000,2000,0
+--check0:info,0
+
+local af0,af1,ang,wid = obj.track0/100,obj.track1/100,obj.track2-90,obj.track3/2
+local uf0,uf1 = 1-af0, 1-af1
+local zoom = obj.getvalue("zoom")/100
+local sin,cos,tan =
+	function(a) return math.sin(a/180*math.pi) end,
+	function(a) return math.cos(a/180*math.pi) end,
+	function(a) return math.tan(a/180*math.pi) end
+local function line(p0, p1, width, color, alpha) --93さんのブロマガより引用。 http://ch.nicovideo.jp/m93/blomaga/ar1027278
+	local g=obj.getvalue
+	local w,h=0,0
+	if color then
+		obj.load("figure","四角形",color,1)
+	else
+		w,h=obj.getpixel()
+	end
+	alpha = alpha or 1
+	width = width or 1
+	local c = obj.getoption("camera_param")
+	local a = {p1[1]-p0[1], p1[2]-p0[2], p1[3]-p0[3]}
+	local b = {c.x-p0[1], c.y-p0[2], c.z-p0[3]}
+	local n = {a[2]*b[3]-a[3]*b[2],a[3]*b[1]-a[1]*b[3],a[1]*b[2]-a[2]*b[1]}
+	local l = math.sqrt(n[1]*n[1] + n[2]*n[2] + n[3]*n[3])
+	local nx,ny,nz = (n[1]/l)*width*.5, (n[2]/l)*width*.5 ,(n[3]/l)*width*.5
+	local x0,y0,z0 = p0[1]-nx,p0[2]-ny,p0[3]-nz
+	local x1,y1,z1 = p1[1]-nx,p1[2]-ny,p1[3]-nz
+	local x2,y2,z2 = p1[1]+nx,p1[2]+ny,p1[3]+nz
+	local x3,y3,z3 = p0[1]+nx,p0[2]+ny,p0[3]+nz
+	obj.drawpoly(x0,y0,z0, x1,y1,z1, x2,y2,z2, x3,y3,z3,0,0,w,0,w,h,0,h,alpha)
+end
+
+
+--------------------------------------------------
+local ax,ay,blur = 0,0,0
+if NMCP then
+	if NMCP[obj.layer] then
+		local tb = NMCP[obj.layer]
+		ax,ay,blur = tb.x, tb.y, tb.blur
+	end
+end
+
+local x0,y0,x1,y1
+if wid==0 then
+	local w,h = obj.w/2,obj.h/2
+	local mang = ang%180
+	if mang<=90 then
+		x0,y0 =
+			h*sin(mang)*cos(mang)	+w*cos(mang)^2,
+			h*sin(mang)^2			+w*sin(mang)*cos(mang)
+	else
+		x0,y0 =
+			h*sin(mang)*cos(mang)	-w*cos(mang)^2,
+			h*sin(mang)^2			-w*sin(mang)*cos(mang)
+	end
+	if mang == ang%360 then x0,y0 = -x0,-y0 end
+
+	x1,y1 =	
+		x0*af1/zoom -x0*uf1/zoom	+ax,
+		y0*af1/zoom -y0*uf1/zoom	+ay
+
+	x0,y0 =
+		x0*af0/zoom -x0*uf0/zoom	+ax,
+		y0*af0/zoom -y0*uf0/zoom	+ay
+
+	obj.effect("斜めクリッピング","幅",0,"ぼかし",blur,"中心X",x0,"中心Y",y0,"角度",ang+90)
+	obj.effect("斜めクリッピング","幅",0,"ぼかし",blur,"中心X",x1,"中心Y",y1,"角度",ang+90+180)
+
+elseif wid>0 then
+	x0,y0,x1,y1 =
+		wid*cos(ang+180)*af0 		+wid*cos(ang)*uf0 +ax,
+		wid*sin(ang+180)*af0 		+wid*sin(ang)*uf0 +ay,
+		wid*cos(ang+180)*af1 		+wid*cos(ang)*uf1 +ax,
+		wid*sin(ang+180)*af1 		+wid*sin(ang)*uf1 +ay
+
+	obj.effect("斜めクリッピング","幅",0,"ぼかし",blur,"中心X",x0,"中心Y",y0,"角度",ang+90)
+	obj.effect("斜めクリッピング","幅",0,"ぼかし",blur,"中心X",x1,"中心Y",y1,"角度",ang+90+180)
+else
+	x0,y0,x1,y1 =
+		ax,
+		ay,
+		ax,
+		ay
+
+	if -wid*af0>=1 then
+		obj.effect("斜めクリッピング","幅",-wid*af0,"ぼかし",blur,"中心X",x0,"中心Y",y0,"角度",ang+90)
+	else
+		obj.alpha = 0
+	end
+	if wid*af1<-1 then
+		obj.effect("斜めクリッピング","幅",wid*af1,"ぼかし",blur,"中心X",x1,"中心Y",y1,"角度",ang+90)
+	end
+	-- obj.alpha = af0==0 and 0 or 1
+end
+-- ◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇◇ --
+if obj.check0 and obj.index==0 then --info UI
+	obj.draw()
+	local p1col,p2col = 0xdf4c94,0x00b6e3
+
+	if wid<0 then
+		x0,y0,x1,y1 =
+		wid/2*cos(ang+180)*af0 		+ax,
+		wid/2*sin(ang+180)*af0 		+ay,
+		wid/2*cos(ang+180)*af1 		+ax,
+		wid/2*sin(ang+180)*af1 		+ay
+	end
+
+	x0,y0,x1,y1 = x0*zoom,y0*zoom,x1*zoom,y1*zoom
+
+	-- guide line -------------------------------------------------------
+	line({x0,y0,0},{x1,y1,0},10,0x6f8285)
+	----------------------------------------------------------------------
+
+	-- clipping line -----------------------------------------------------
+	local mx0,my0,mx1,my1
+	local d,rang=4000,ang+90
+
+	mx0,my0 = x0+cos(rang)*d, 		y0+sin(rang)*d
+	mx1,my1 = x0+cos(rang+180)*d,	y0+sin(rang+180)*d
+	line({mx0,my0,0},{mx1,my1,0},8,p1col)
+
+	mx0,my0 = x1+cos(rang)*d,		y1+sin(rang)*d
+	mx1,my1 = x1+cos(rang+180)*d,	y1+sin(rang+180)*d
+	line({mx0,my0,0},{mx1,my1,0},3,p2col)
+
+	if wid<0 then
+		mx0,my0 = x0*-1+cos(rang)*d, 		y0*-1+sin(rang)*d
+		mx1,my1 = x0*-1+cos(rang+180)*d,	y0*-1+sin(rang+180)*d
+		line({mx0,my0,0},{mx1,my1,0},8,p1col)
+
+		mx0,my0 = x1*-1+cos(rang)*d,		y1*-1+sin(rang)*d
+		mx1,my1 = x1*-1+cos(rang+180)*d,	y1*-1+sin(rang+180)*d
+		line({mx0,my0,0},{mx1,my1,0},3,p2col)
+	end
+	----------------------------------------------------------------------
+
+	-- point -------------------------------------------------------------
+	obj.load("figure","円",p1col,50)				obj.draw(x0,y0)
+	obj.load("<#ffffff><s35,Zona Pro Bold>1")	obj.draw(x0,y0-2)
+	obj.load("figure","円",p2col,50)				obj.draw(x1,y1)
+	obj.load("<#ffffff><s35,Zona Pro Bold>2")	obj.draw(x1,y1-2)
+	----------------------------------------------------------------------
+
+	-- point info --------------------------------------------------------
+	local mx,my
+	local d=70
+	local addn = wid<0 and -1 or 1
+	local addang = wid<0 and 0 or 1
+	obj.load(string.format("<#df4c94><s30,Zona Pro Bold>AF-1\n<s18>af: %d%%",af0*100))
+	mx,my = d*cos(ang-180)*zoom,d*sin(ang-180)*zoom
+	obj.draw(x0+mx*addn,y0+my*addn,0,1,1,0,0,ang+180*addang)
+	----------
+	obj.load(string.format("<#00b6e3><s30,Zona Pro Bold>AF-2\n<s18>af: %d%%",af1*100))
+	mx,my = d*cos(ang)*zoom,d*sin(ang)*zoom
+	obj.draw(x1+mx*addn,y1+my*addn,0,1,1,0,0,ang)
+	----------------------------------------------------------------------
+
+	-- debug_print(string.format("%d; %d; %d; %d;",x0,y0,x1,y1))
+elseif obj.check0 then
+	obj.alpha = 0
+end
+
+------------------------------------------------------------
+@Option
+------------------------------------------------------------
+--track0:X,-3000,3000,0
+--track1:Y,-3000,3000,0
+--track2:Blur,0,500,0,1
+
+NMCP = NMCP or {}
+NMCP[obj.layer] = {
+	x = obj.track0,
+	y = obj.track1,
+	blur = obj.track2
+}

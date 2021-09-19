@@ -1,0 +1,22 @@
+@画像キャッシュ保存
+--track0:保存先ID,1,300,1,1
+--check0:非表示にする,0
+require("rikky_module")
+local id=obj.track0
+rikky_module.image("w",id)
+if(obj.check0)then　obj.alpha=0 end
+
+
+@保存画像キャッシュ読込
+--track0:読込先ID,1,300,1,1
+require("rikky_module")
+local id=obj.track0
+rikky_module.image("r",id)
+
+
+@保存画像キャッシュクリア
+--track0:読込先ID,1,300,1,1
+require("rikky_module")
+local id=obj.track0
+rikky_module.image("c",id)
+

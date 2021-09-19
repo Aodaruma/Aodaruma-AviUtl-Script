@@ -1,0 +1,67 @@
+--[[
+便利なスクリプトを作ったように見えて実はあまり便利ではないような気がするスクリプトです。
+
+
+説明するまでもないので省略したい...
+-----------------------------------
+ローテーション: 角度が回るだけです。
+			それぞれの対角線にぴったり合わされます。
+
+X,Y:		クリッピングのX,Yです。
+
+幅:			斜めクリッピングと同じ挙動です。
+
+二角度:		互いの対角線を交差してクリッピングします。
+			まあ、触ってみるまでです。
+
+反転:		角度を反転します。
+
+Info:		情報表示です(以下略)
+
+質問等はTwitterまで。
+
+LastEdit: 9:07 2017/03/28
+Developed by Aodaruma
+twitter: @Aodaruma_
+]]
+
+--track0:ﾛｰﾃｰｼｮﾝ,0,4,0,1
+--track1:X,-5000,5000,0
+--track2:Y,-5000,5000,0
+--track3:幅,-2000,2000,0,1
+--dialog:二角度/chk,local twoang=0;反転/chk,local reva=0;
+--check0:Info,0
+
+local w,h=obj.w,obj.h
+local ang=math.deg(math.atan(h/w))
+local r=obj.track0
+
+if(obj.check0)then
+	obj.setfont("メイリオ",70)
+	obj.load("対角線の角度は"..ang.."度です。\n表記を小数点第一までとすると、\n"..(math.floor(ang*10)/10).."度となります。")
+else
+	-- 安定感のあるごり押し
+	if(r==1) then
+		ang = 180-ang
+	elseif(r==2) then
+		ang = ang+180
+	elseif(r==3) then
+		ang = 180-ang+180
+	end
+	ang = ang*(reva==1 and -1 or 1)
+	obj.effect("斜めクリッピング",
+			"角度",ang,
+			"幅",obj.track3,
+			"中心X",obj.track1,
+			"中心Y",obj.track2
+		)
+	if(twoang==1)then
+		ang = 180-ang+(r%2==0 and 180 or 0)
+		obj.effect("斜めクリッピング",
+			"角度",ang,
+			"幅",obj.track3,
+			"中心X",obj.track1,
+			"中心Y",obj.track2
+		)
+	end
+end

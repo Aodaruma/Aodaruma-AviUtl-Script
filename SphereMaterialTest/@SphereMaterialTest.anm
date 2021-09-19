@@ -1,0 +1,214 @@
+--[[
+rikky氏のdllの、光源反射関数を実際に体験できるスクリプトです。
+当然ですがrikky氏のdll「rikky_module.dll」が必要です。
+
+一応研究などにも使えるように、情報スクリプトもつけておきました。
+軽量化を外すと若干おしゃれ&見やすくになります。
+
+
+◆それぞれの値について。◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆
+light:光源色
+	シャドーにて設定した光源の位置から放たれる
+	光の色です。
+
+ambient:環境色
+	光源以外の周囲の光、環境光の色です。
+	(正確には「方向性のない環境光の反映度合い」の色(らしい)です。)
+
+emissive:発光色
+	オブジェクトを発光させる際に使用する発光光の色です。
+
+specular:反射色
+	光源からオブジェクトにあてられた光が反射した光の色です。
+◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆
+
+
+光源を二つ三つに増やすことはできますが、
+それはまたスクリプトのバージョンアップにご期待ください(実現するかどうかは別)。
+
+◆◆◆◆◆◆◆◆◆◆◆◆◆◆
+LastEdit: 19:42 2017/02/11
+Developed by Aodaruma
+Twitter: @Aodaruma_
+
+]]--
+-----------------------------------------------------
+@情報
+-----------------------------------------------------
+--track0:文字サイズ,0,300,18,1
+--track1:四角形サイズ,0,1000,100,1
+--track2:layer,1,100,1,1
+--track3:軽量化,0,1,0,1
+--check0:表示,0
+--color:0x355c7d
+
+local l="layer"..obj.track2
+local fsize,size=obj.track0,obj.track1
+local x,y,data
+local light,ambient,emissive,specular
+local dx,dy
+
+obj.setfont("メイリオ",fsize,0,color)
+if (type(ST)=="table") and (type(ST[l])=="table") and obj.check0 then
+	dx,dy=ST[l].x/2,ST[l].y/2*-1
+	objSize=ST[l].size/(ST[l].distance/2000)
+	x,y,data=ST[l].x+dx+100, ST[l].y+dy-100, ST[l].data
+
+	light,ambient,emissive,specular=
+		RGB(data.light1.R, data.light1.G, data.light1.B),
+		RGB(255*data.ambient.R/100, 255*data.ambient.G/100, 255*data.ambient.B/100),
+		RGB(data.emissive.R, data.emissive.G, data.emissive.B),
+		RGB(data.specular.R, data.specular.G, data.specular.B)
+
+	local w=size*4+size*3
+	
+	if(obj.track3==0) then
+		obj.load("framebuffer")
+		obj.effect("マスク","type",2,"サイズ",w/1.2-5,"X",x,"Y",y+200)
+		obj.effect("ぼかし","範囲",20,"サイズ固定",1)
+		obj.effect("単色化","color",color,"輝度を保持する",0,"強さ",10)
+		obj.draw()
+		obj.load("figure","四角形",color,w/1.2,10)
+		obj.draw(x,y+200)
+	end
+	if(ST[l].distance>ST[l].size) then
+		obj.load("figure","円",color,objSize)
+		obj.draw(ST[l].x,ST[l].y,0,1,0.4)
+	end
+
+	obj.load("光源色:\n"
+		.."R:"..data.light1.R.." G:"..data.light1.G.." B:"..data.light1.B
+		.."\n"..string.format("col: #%x",light))
+	obj.draw(x+w/6,y)
+	obj.load("figure","四角形",light,size)
+	obj.draw(x+w/6,y+size+fsize)
+
+	obj.load("環境色:\n"
+		.."R%:"..data.ambient.R.." G%:"..data.ambient.G.." B%:"..data.ambient.B
+		.."\n"..string.format("col: #%x",ambient))
+	obj.draw(x-w/6,y)
+	obj.load("figure","四角形",ambient,size)
+	obj.draw(x-w/6,y+size+fsize)
+
+	obj.load("加算色味:\n"
+		.."R:"..data.emissive.R.." G:"..data.emissive.G.." B:"..data.emissive.B
+		.."\n"..string.format("col: #%x",emissive))
+	obj.draw(x+w/6,y+250)
+	obj.load("figure","四角形",emissive,size)
+	obj.draw(x+w/6,y+size+fsize+250)
+
+	obj.load("鏡面反射色:\n"
+		.."R:"..data.specular.R.." G:"..data.specular.G.." B:"..data.specular.B
+		.."\n"..string.format("col: #%x",specular))
+	obj.draw(x-w/6,y+250)
+	obj.load("figure","四角形",specular,size)
+	obj.draw(x-w/6,y+size+fsize+250)
+elseif obj.check0 then
+	obj.load("情報が見つかりません。\nオブジェクトやレイヤーを確認してください。")
+else
+	obj.alpha=0
+end
+
+-----------------------------------------------------
+@本体
+-----------------------------------------------------
+--track0:分割数,3,500,28,1
+--track1:半径,0,5000,200
+--track2:光源度%,0,100,100
+--track3:ﾊｲﾗｲﾄｼｬｰﾌﾟ,0,5000,100
+--check0:通常描画,0
+--dialog:figureCol/col,local col=0xffffff;lightR,local lightR=255;lightG,local lightG=255;lightB,local lightB=255;ambientR%,local ambientR=20;ambientG%,local ambientG=20;ambientB%,local ambientB=20;emissiveR,local emissiveR=255;emissiveG,local emissiveG=255;emissiveB,local emissiveB=255;specularR, local specularR=255;specularG, local specularG=255;specularB, local specularB=255;
+
+local divnum=obj.track0  --分割数
+local r=obj.track1 --半径
+local af=obj.track2/100
+local shininess=obj.track3    --反射色RGB+ハイライトシャープ値
+--------------------------------------------------
+local i,j,l
+local n=divnum
+local sin,cos=function(n) return math.sin(n) end,function(n) return math.cos(n) end
+local x0,x1,x2,x3,y0,y1,r0,r1,z0,z1,z2,z3,d0,d1,angi,angj
+local pi=math.pi
+require("rikky_module")
+local data={
+	light_num=1,
+	position1={x=0,y=0,z=0, object="shadow"},
+	light1=   {R=lightR*af, G=lightG*af, B=lightB*af },
+	ambient=  {R=ambientR,  G=ambientG,  B=ambientB  },
+	emissive= {R=emissiveR, G=emissiveG, B=emissiveB },
+	specular= {R=specularR, G=specularG, B=specularB,  shininess=shininess}
+}
+obj.load("figure","四角形",col,1)
+l="layer"..obj.layer
+
+
+for i=1,n do
+	d0,d1=pi *(i-1)/n, pi*i/n
+	y0,y1=-r* cos(d0),-r*cos(d1)
+	r0,r1= r* sin(d0),r*sin(d1)
+	for j=1,n do
+		d0,d1=2*pi*(j-1)/n, 2*pi*j/n
+		x0,x1,x2,x3=
+			-r0* sin(d1),
+			-r0* sin(d0),
+			-r1* sin(d0),
+			-r1* sin(d1)
+		z0,z1,z2,z3=
+			-r0* cos(d1),
+			-r0* cos(d0),
+			-r1* cos(d0),
+			-r1* cos(d1)
+		if(obj.check0) then
+			
+			obj.drawpoly(
+				x0,y0,z0,
+				x1,y0,z1,
+				x2,y1,z2,
+				x3,y1,z3
+			)
+		else
+			rikky_module.materialdraw_init(0)
+			rikky_module.materialdraw_init(data)
+			rikky_module.materialdraw(
+				x0,y0,z0,
+				x1,y0,z1,
+				x2,y1,z2,
+				x3,y1,z3
+			)
+		end
+	end
+end
+
+
+--[[
+-- phi= j, theta= i
+for i=1,n do
+	angi1,angi2=(360/n)*(i),(360/n)*(i-1)
+	for j=1,n do
+		angj1,angj2=(360/n)*(j),(360/n)*(j-1)
+		px1,px2=sin(angi1)*cos(angj1)*r,sin(angi2)*cos(angj2)*r
+		py1,py2=sin(angi2)*sin(angj2)*r,sin(angi1)*sin(angj1)*r
+		pz1,pz2=cos(angj1)*r,cos(angj2)*r
+		if(obj.check0) then
+			obj.drawpoly(
+				px1, py1, pz1,
+				px2, py1, pz2,
+				px2, py2, pz2,
+				px1, py2, pz1
+			)
+		else
+			rikky_module.materialdraw(
+				px1, py1, pz1,
+				px2, py1, pz2,
+				px2, py2, pz2,
+				px1, py2, pz1
+			)
+		end
+	end
+end
+]]--
+
+local info=rikky_module.camerainfo()
+if(type(ST)~="table") then ST={} end
+if(type(ST[l])~="table") then ST[l]={} end
+ST[l]={x=info.ix, y=info.iy, data=data, viewingAng=info.d, distance=info.real_d, size=r}
