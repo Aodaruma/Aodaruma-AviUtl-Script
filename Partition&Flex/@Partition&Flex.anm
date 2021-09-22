@@ -167,6 +167,170 @@ else
     end
 end
 
+
+--------------------------------------------------
+@オブジェクト1次元配置
+--------------------------------------------------
+--track0:sizeX,0,3000,1280
+--track1:sizeY,0,3000,720
+--track2:grid(%),0,100,0
+--track3:anime(%),0,5000,5000
+--dialog:縦書き/chk,local order=0;係数,local factors={};個別対応/chk,local isIndv=1;個数(非個別),local objnums=5;変形(%),local changeAF=100;間隔,local space=2;easing,local easing=23;seed,local seed=777;
+
+order = order or 0
+objnums = objnums or 8
+changeAF = changeAF / 100 or 1
+space = space or 0
+easing = easing or 1
+seed = seed or 777
+factors = factors or {}
+
+
+local status, E = pcall(require, "easing_aviutl")
+if not status then
+    E = nil
+end
+
+----------------
+-- function definition
+----------------
+local function show_message(s)
+    obj.setfont("メイリオ",200)
+    obj.load(s)
+end
+
+local function interpolate(a,b,af)
+    return a*(1-af) + b*af
+end
+
+----------------
+-- class definition
+----------------
+local Point = {}
+Point.new = function(x, y)
+    local o = {}
+    o.x = x
+    o.y = y
+    o.returnCoordinate = function(self)
+        return {self.x, self.y}
+    end
+    return o
+end
+local Area = {}
+Area.new = function(x1, y1, x2, y2)
+    return {
+        range = {
+            {x1, y1},
+            {x2, y2}
+        },
+        points = {
+            Point.new(x1, y1),
+            Point.new(x2, y1),
+            Point.new(x2, y2),
+            Point.new(x1, y2)
+        }
+    }
+end
+
+----------------
+local sizeX, sizeY, gridAF = obj.track0, obj.track1, obj.track2 / 100
+local animeIndex, animeAF = math.modf( obj.track3/100 )
+local n = isIndv == 1 and obj.num or objnums
+local areas = {}
+
+local easedAnimeAF = (E ~= nil and E.is_easing_type(easing)) and E.easing(easing, animeAF, 0, 1, 1, 0, 1, 0) or animeAF
+
+if obj.index == 0 then
+    local orderMax = order==0 and sizeX or sizeY
+    local sum_of_factors,next_sum_of_factor = 0,0
+    for i=1,math.min(animeIndex,n) do
+        if i < #factors and type(factors[i]) == "number" then
+            sum_of_factors = sum_of_factors + factors[i]
+        else
+            sum_of_factors = sum_of_factors + 1
+        end
+    end
+    local size_unit = orderMax / sum_of_factors
+    local grided_size_unit = orderMax / n
+
+    local sum_size = 0
+    local sum_grid_size = 0
+    for i = 0,n do
+
+        local size,grid_size
+        if i < #factors and type(factors[i]) == "number" then
+            size = size_unit * factors[i]
+        else
+            size = size_unit
+        end
+        grid_size = grided_size_unit
+
+        local x1,x2 = unpack(order == 0 and {
+            sum_size,
+            size+sum_size
+            } or {0,sizeX})
+
+        local y1,y2 = unpack(order == 1 and {
+            sum_size,
+            size+sum_size
+            } or {0,sizeY})
+        table.insert( areas, Area.new(
+            x1-sizeX/2,
+            y1-sizeY/2,
+            x2-sizeX/2,
+            y2-sizeY/2
+        ))
+        sum_size = sum_size + size
+        sum_grid_size = sum_grid_size + grid_size
+    end
+
+    if isIndv == 1 then
+        Aodaruma_PF_CalculatedArea = areas
+    end
+end
+
+----------------
+local z = 0
+local function drawpoly(area)
+    local a = area
+    local ps = a.points
+    local coords = {}
+    local x, y, w, h = obj.x, obj.y, obj.w, obj.h
+    local inicoords = {0, 0, z, w, 0, z, w, h, z, 0, h, z}
+    for i, p in ipairs(ps) do
+        -- linear affect
+        table.insert(
+            coords,
+            (p.x - sizeX / 2 - obj.ox) * changeAF + (inicoords[i * 3 - 2] - w / 2 + x) * (1 - changeAF)
+        )
+        table.insert(
+            coords,
+            (p.y - sizeY / 2 - obj.oy) * changeAF + (inicoords[i * 3 - 1] - h / 2 + y) * (1 - changeAF)
+        )
+        table.insert(coords, z)
+    end
+    return obj.drawpoly(unpack(coords))
+end
+
+-- drawing
+if isIndv == 1 then
+    local a = Aodaruma_PF_CalculatedArea
+    -- 一度tempbufferで読み込むことにより上下左右中央にオブジェクトが来るように再設定
+    obj.copybuffer("tmp", "obj")
+    obj.load("tempbuffer")
+
+    local index = obj.index + 1
+    drawpoly(a[index])
+else
+    obj.copybuffer("tmp", "obj")
+    for i = 1, n do
+        obj.load("tempbuffer")
+        drawpoly(areas[i])
+    end
+end
+
+
+
 --[[
     補完ありの分割はちゃんとアルゴリズム考えてから実装します。
     ただ、めんどくさくてしばらく手を付けないかもしれません。
@@ -264,11 +428,18 @@ for i=1,m do
     table.insert( grided_areas, tmp )
 end
 
-for d=1,depth do
-    -- transforming
-    for i=1,m,2 do
-        for j=1,m,2 do
-            local a = areas[d*j][d*i]
+    for j = 1, m do
+            local a = areas[j]
+            local min, max = a.range[1][axis(i) + 1], a.range[2][axis(i) + 1]
+            -- 3つに分割する
+            local partition = obj.rand(0, resolution/2, j, seed + i * maxSeedAF + math.floor(seedAF))
+            local partition_next = obj.rand(0, resolution/2, j, seed + i * maxSeedAF + math.floor(seedAF + 1))
+            local partition2 = obj.rand(resolution/2, resolution, j, seed + i * maxSeedAF + math.floor(seedAF) + n)
+            local partition2_next = obj.rand(resolution/2, resolution, j, seed + i * maxSeedAF + math.floor(seedAF + 1) + n)
+ 
+            -- このままだとpartition > partition2の場合もあるため、改善
+            partition, partition2 = unpack(sorting({partition,partition2}))
+            partition_next, partition2_next = unpack(sorting({partition_next,partition2_next}))
 
         end
     end
