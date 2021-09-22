@@ -236,50 +236,71 @@ end
 local sizeX, sizeY, gridAF = obj.track0, obj.track1, obj.track2 / 100
 local animeIndex, animeAF = math.modf( obj.track3/100 )
 local n = isIndv == 1 and obj.num or objnums
-local areas = {}
+local areas,next_areas = {},{}
 
 local easedAnimeAF = (E ~= nil and E.is_easing_type(easing)) and E.easing(easing, animeAF, 0, 1, 1, 0, 1, 0) or animeAF
 
 if obj.index == 0 then
     local orderMax = order==0 and sizeX or sizeY
     local sum_of_factors,next_sum_of_factor = 0,0
-    for i=1,math.min(animeIndex,n) do
-        if i < #factors and type(factors[i]) == "number" then
-            sum_of_factors = sum_of_factors + factors[i]
-        else
-            sum_of_factors = sum_of_factors + 1
+
+    if animeIndex == 0 then
+        sum_of_factors = 1
+    else
+        for i=1,math.min(animeIndex,n) do
+            if i <= #factors and type(factors[i]) == "number" and 0 <= factors[i] then
+                sum_of_factors = sum_of_factors + factors[i]
+            else
+                sum_of_factors = sum_of_factors + 1
+            end
         end
     end
-    local size_unit = orderMax / sum_of_factors
+    for i=1,math.min(animeIndex+1,n) do
+        if i <= #factors and type(factors[i]) == "number" and 0 <= factors[i] then
+            next_sum_of_factor = next_sum_of_factor + factors[i]
+        else
+            next_sum_of_factor = next_sum_of_factor + 1
+        end
+    end
+
+    local size_unit = interpolate(orderMax / sum_of_factors, orderMax / next_sum_of_factor, easedAnimeAF)
     local grided_size_unit = orderMax / n
 
     local sum_size = 0
     local sum_grid_size = 0
-    for i = 0,n do
+    for i = 1,math.min(animeIndex+1,n) do
 
         local size,grid_size
-        if i < #factors and type(factors[i]) == "number" then
+        if i <= #factors and type(factors[i]) == "number" and 0 <= factors[i] then
             size = size_unit * factors[i]
         else
             size = size_unit
         end
         grid_size = grided_size_unit
 
-        local x1,x2 = unpack(order == 0 and {
-            sum_size,
-            size+sum_size
+        local x1,x2,y1,y2
+        if i == animeIndex+1 then
+            x1,x2 = unpack(order == 0 and {
+                interpolate(sum_size, sum_grid_size, gridAF),
+                interpolate(sum_size+size*easedAnimeAF, sum_grid_size+grid_size*easedAnimeAF, gridAF)
+                } or {0,sizeX})
+    
+            y1,y2 = unpack(order == 1 and {
+                interpolate(sum_size, sum_grid_size, gridAF),
+                interpolate(sum_size+size*easedAnimeAF, sum_grid_size+grid_size*easedAnimeAF, gridAF)
+                } or {0,sizeY})
+        else
+            x1,x2 = unpack(order == 0 and {
+                interpolate(sum_size, sum_grid_size, gridAF),
+                interpolate(sum_size+size, sum_grid_size+grid_size, gridAF)
             } or {0,sizeX})
-
-        local y1,y2 = unpack(order == 1 and {
-            sum_size,
-            size+sum_size
+        
+            y1,y2 = unpack(order == 1 and {
+                interpolate(sum_size, sum_grid_size, gridAF),
+                interpolate(sum_size+size, sum_grid_size+grid_size, gridAF)
             } or {0,sizeY})
-        table.insert( areas, Area.new(
-            x1-sizeX/2,
-            y1-sizeY/2,
-            x2-sizeX/2,
-            y2-sizeY/2
-        ))
+        end
+        table.insert( areas, Area.new(x1,y1,x2,y2))
         sum_size = sum_size + size
         sum_grid_size = sum_grid_size + grid_size
     end
@@ -320,7 +341,11 @@ if isIndv == 1 then
     obj.load("tempbuffer")
 
     local index = obj.index + 1
-    drawpoly(a[index])
+    if index <= #a then
+        drawpoly(a[index])
+    else
+        obj.alpha = 0
+    end
 else
     obj.copybuffer("tmp", "obj")
     for i = 1, n do
