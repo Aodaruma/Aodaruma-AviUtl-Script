@@ -1,24 +1,9 @@
 --[[
-‚È‚ñ‚©ƒ|ƒbƒv—p‚Ì‚â‚Â‚ğì‚è‚Ü‚µ‚½B
-rikky‚ÌdllArikky_module‚ª•K—v‚Å‚·B
+This script is version 1.11. If it is outdated, please replace it with a newer script.
+We are not responsible for any damage caused by the use of this script.
 
-‚½‚Ô‚ñà–¾‚Í‚¢‚ç‚È‚¢‚Ì‚ÅA‚Æ‚è‚ ‚¦‚¸G‚Á‚Ä‚İ‚é‚×‚µB
-
-Šî–{“I‚ÉRead‚Ìƒ_ƒCƒAƒƒO‚Í‰æ‚è‚©‚çˆø—p‚µ‚½‚à‚Ì‚Å‚·B
-Ši”[êŠ‚Å•Û‘¶‚µA“ÇêŠ‚Åæ‚èo‚µ‚Ü‚·B
-Read‚Å“Ç‚İ‚Ş‚ÆWriteƒf[ƒ^‚Í©“®“I‚ÉÁ‹‚µ‚Ä‚µ‚Ü‚¢‚Ü‚·‚Ì‚ÅA‚»‚Ìê‡‚ÍRead‚Ìƒ_ƒCƒAƒƒO‚Éƒ`ƒFƒbƒN‚ğ“ü‚ê‚Ä‚­‚¾‚³‚¢B
-‰½‚©¿–â‚ª‚ ‚ê‚Îtwitter‚Ü‚ÅB
-
-‚ ‚ÆAƒeƒLƒXƒgg—p‚ÌáŠ±ƒoƒO‚è‚Ü‚·B
-
-version -
-	ver1.0 - ì¬B
-	ver1.1 - ‘ÎÛŒ³‚Ì‰ñ“]‚ğl—¶B
-
-LastEdit: 17:38 2017/03/09
-Developed by Aodaruma
-twitter: @Aodaruma_
-]]--
+developed by Aodaruma (@Aodaruma_)
+]]
 
 ------------------------------------------------------------------------------------------------
 @Write
@@ -32,44 +17,12 @@ local i,x,y,t,path,found
 local finish=false
 NKDS = NKDS or {}
 if(obj.num~=1) then
-	--[[
-	ŒÂ•ÊƒIƒuƒWƒFƒNƒg‘Î‰‚·‚é‚Ì‚ª‚ß‚ñ‚Ç‚­‚³‚©‚Á‚½‚Ì‚ÅƒGƒ‰[‚Ì‚İ‚Ìˆ—...
-	‚à‚µ‚Ç‚¤‚µ‚Ä‚àŒÂ•ÊƒIƒuƒWƒFƒNƒg‚Å‚Ì”²‚«o‚µ‰æ‚è‚ªg‚¢‚½‚©‚Á‚½‚ç
-	rikky‚ÌuƒeƒLƒXƒgˆê–‡‰»v‚Æ‚¢‚¤ƒXƒNƒŠƒvƒg‚ğg‚Á‚Ä‚­‚¾‚³‚ê...
-
-	ŒÂ•ÊƒIƒuƒWƒFƒNƒg‘Î‰‚Íƒo[ƒWƒ‡ƒ“ƒAƒbƒv‚ÉŠú‘Ò‚µ‚Ä‚¿‚å( LEƒÖE`)
-
-
-	---------- ‘‚«‚©‚¯ ---------
-	if(obj.index == 0) then
-		path=obj.getinfo("script_path")
-		while(string.sub(path,#path,#path)=="\\") do
-			path=string.sub(path,1,#path-1)
-		end
-			path=path.."\\ƒeƒLƒXƒgˆê–‡‰».anm"
-		local t=io.open(path,"r")
-		if t then
-			t:close()
-			found = true
-		end
-	end
-
-	if(found) then
-		require("ƒeƒLƒXƒgˆê–‡‰»")
-		if obj.index == (obj.num-1) then
-			x,y=obj.x,obj.y
-			finish = true
-		end
-	end
-	----------------------------------
-	]]--
+	
 	obj.setfont("ƒƒCƒŠƒI",30)
 	obj.load(
 		"error"
 		.."\n‚±‚ÌƒIƒuƒWƒFƒNƒg‚ÍŒÂ•ÊƒIƒuƒWƒFƒNƒg‚Å‚·B"
 		.."\nŒ»ƒo[ƒWƒ‡ƒ“‚Ì‚±‚ÌƒXƒNƒŠƒvƒg‚ÍŒ»İŒÂ•ÊƒIƒuƒWƒFƒNƒg‚É‚Í‘Î‰‚µ‚Ä‚¨‚è‚Ü‚¹‚ñB"
-		.."\n‚Ç‚¤‚µ‚Ä‚àg—p‚·‚éê‡‚ÍArikky‚ÌuƒeƒLƒXƒgˆê–‡‰»vƒXƒNƒŠƒvƒg‚Ìg—p‚ğ"
-		.."\n„§‚¢‚½‚µ‚Ü‚·B"
 		)
 else
 	x,y=obj.getvalue("x"),obj.getvalue("y")
@@ -87,7 +40,7 @@ if(finish) and (obj.check0) then NKDS[obj.track0]={x=x, y=y, rz=obj.getvalue("rz
 --track2:X,-2000,2000,0
 --track3:Y,-2000,2000,0
 --check0:“Ç,0
---dialog:‚Ú‚©‚µ,local blur=0;clear‚·‚é/chk,local isclear=1;
+--dialog:‚Ú‚©‚µ,local blur=0;clear‚·‚é/chk,local isclear=0;
 
 require("rikky_module")
 local i,n,x,y
@@ -104,7 +57,7 @@ if(rikky_module) and (NKDS[obj.track0]) and (obj.check0) then -- rikky_module‚Íƒ
 	obj.effect("‰æ‚è","ƒTƒCƒY",obj.track1,"‚Ú‚©‚µ",blur)
 	obj.setoption("blend","alpha_sub")
 
-	-- if(type(NKDS[obj.track0].x)=="table") then -- ˆê‚Â’²‚×‚ê‚Î•K‘R“I‚Éƒe[ƒuƒ‹‚Æ”»’f‚Å‚«‚é‚ªAŒ»İ‘o‚µ’†
+	-- if(type(NKDS[obj.track0].x)=="table") then
 	-- 	n = #NKDS[obj.track0].x
 	-- 	obj.draw(
 	-- 		NKDS[obj.track0].x-obj.getvalue("x")+obj.track0,

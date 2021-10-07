@@ -12,7 +12,9 @@ developed by Aodaruma (@Aodaruma_)
 --track1:sizeY,0,3000,720
 --track2:grid(%),0,100,0
 --track3:seedAF(%),0,5000,0
---dialog:ŒÂ•Ê‘Î‰/chk,local isIndv=1;ŒÂ”(”ñŒÂ•Ê),local objnums=5;•ÏŒ`(%),local changeAF=100;•ªŠ„‰ğ‘œ“x,local resolution=100;ŠÔŠu,local space=2;easing,local easing=23;order,local order=0;seed,local seed=777;
+--dialog:ŒÂ•Ê‘Î‰/chk,local isIndv=1;ŒÂ”(”ñŒÂ•Ê),local objnums=5;•ÏŒ`(%),local changeAF=100;•ªŠ„‰ğ‘œ“x,local resolution=100;ŠÔŠu,local space=2;easing,local easing=23;order,local order=0;seed,local seed=777;animeAF(%),local animeAFs={};animeType,local animeType=0;
+
+obj.setoption("focus_mode","fixed_size")
 
 objnums = objnums or 8
 changeAF = changeAF / 100 or 1
@@ -21,6 +23,8 @@ easing = easing or 1
 seed = seed or 777
 space = space or 0
 order = order or 0
+animeAFs = type(animeAFs) == "table" and animeAFs or {}
+animeType = animeType or 0
 
 local status, E = pcall(require, "easing_aviutl")
 if not status then
@@ -52,7 +56,8 @@ Point.new = function(x, y)
     return o
 end
 local Area = {}
-Area.new = function(x1, y1, x2, y2)
+Area.new = function(x1, y1, x2, y2, axis)
+    axis = axis == 1 and 1 or 0
     return {
         range = {
             {x1, y1},
@@ -63,14 +68,26 @@ Area.new = function(x1, y1, x2, y2)
             Point.new(x2, y1),
             Point.new(x2, y2),
             Point.new(x1, y2)
-        }
+        },
+        anime_axis = axis,
+        animation = function(self, af, axis)
+            axis = (type(axis) == "number" and (0 <= axis and axis <= 1)) and axis or self.anime_axis
+            af = type(af) == "number" and af / 100 or 1
+            local minX, minY = unpack(self.range[1])
+            local maxX, maxY = unpack(self.range[2])
+            if axis == 1 then
+                return Area.new(minX,minY,maxX,(maxY-minY)*af+minY)
+            else
+                return Area.new(minX,minY,(maxX-minX)*af+minX,maxY)
+            end
+        end
     }
 end
 
 ----------------
 local maxSeedAF = 50
 local sizeX, sizeY, gridAF, seedAF = obj.track0, obj.track1, obj.track2 / 100, obj.track3 / 100
-local range = Area.new(0, 0, sizeX, sizeY)
+local range = Area.new(0, 0, sizeX, sizeY, (math.max(sizeX,sizeY)==sizeX and 0 or 1))
 local n = isIndv == 1 and obj.num or objnums
 -- lua 5.1‚Ìmath.log‚Íe‚Å’êŒÅ’è‚ç‚µ‚¢
 -- local depth = math.ceil(math.log(n, 2))
@@ -122,8 +139,8 @@ if obj.index == 0 then
                             a.points[3].y
                         }
                 )
-                tmp[2 * (m - j + 1)] = Area.new(x1min, y1min, x1max, y1max)
-                tmp[2 * (m - j + 1) - 1] = Area.new(x2min, y2min, x2max, y2max)
+                tmp[2 * (m - j + 1)] = Area.new(x1min, y1min, x1max, y1max, axis(i))
+                tmp[2 * (m - j + 1) - 1] = Area.new(x2min, y2min, x2max, y2max, axis(i))
                 area_num = area_num + 1
             else
                 break
@@ -170,8 +187,8 @@ if obj.index == 0 then
                             a.points[3].y
                         }
                 )
-                tmp[2 * (m - j + 1)] = Area.new(x1min, y1min, x1max, y1max)
-                tmp[2 * (m - j + 1) - 1] = Area.new(x2min, y2min, x2max, y2max)
+                tmp[2 * (m - j + 1)] = Area.new(x1min, y1min, x1max, y1max, axis(i))
+                tmp[2 * (m - j + 1) - 1] = Area.new(x2min, y2min, x2max, y2max, axis(i))
                 area_num = area_num + 1
             else
                 break
@@ -216,8 +233,27 @@ end
 
 ----------------
 local z = 0
-local function drawpoly(area)
+local function drawpoly(area, index, order)
+    order = order or 0
     local a = area
+    local animeAF = (0 < index and index <= #animeAFs) and animeAFs[index] or 100
+    if animeAF == 0 then
+        obj.alpha = 0
+        return false
+    end
+    if type(order) == "string" then
+        local minX,minY = unpack(a.range[1])
+        local maxX,maxY = unpack(a.range[2])
+        local difX,difY = maxX-minX, maxY-minY
+        if order == "max" then
+            order = math.max(difX, difY) == difX and 0 or 1
+        elseif order == "min" then
+            order = math.min(difX, difY) == difX and 0 or 1
+        else
+            order = 0
+        end
+    end
+    a = a:animation(animeAF, order)
     local ps = a.points
     local coords = {}
     local x, y, w, h = obj.x, obj.y, obj.w, obj.h
@@ -272,12 +308,34 @@ if isIndv == 1 then
     else -- order == 0 or someelse
         index = obj.index + 1
     end
-    drawpoly(a[index])
+
+    local anime_order
+    if type(animeType) == "number" and 0 <= animeType and animeType <= 1 then
+        anime_order = animeType
+    elseif type(animeType) == "table" then
+        if obj.index < #animeType then
+            anime_order = animeType[obj.index+1]
+        else
+            anime_order = 0
+        end
+    elseif type(animeType) == "string" then
+        if animeType == "max" then
+            anime_order = "max"
+        elseif animeType == "min" then
+            anime_order = "min"
+        else
+            anime_order = obj.index%2
+        end
+    else
+        anime_order = obj.index%2
+    end
+
+    drawpoly(a[index], obj.index+1, anime_order)
 else
     obj.copybuffer("tmp", "obj")
     for i = 1, n do
         obj.load("tempbuffer")
-        drawpoly(areas[i])
+        drawpoly(areas[i], i, i % 2)
     end
 end
 
@@ -290,6 +348,8 @@ end
 --track2:grid(%),0,100,0
 --track3:anime(%),0,5000,5000
 --dialog:c‘‚«/chk,local order=0;ŒW”,local factors={};ŒÂ•Ê‘Î‰/chk,local isIndv=1;ŒÂ”(”ñŒÂ•Ê),local objnums=5;•ÏŒ`(%),local changeAF=100;ŠÔŠu,local space=2;easing,local easing=23;seed,local seed=777;
+
+obj.setoption("focus_mode","fixed_size")
 
 order = order or 0
 objnums = objnums or 8
