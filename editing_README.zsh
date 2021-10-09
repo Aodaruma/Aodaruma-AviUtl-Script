@@ -1,3 +1,4 @@
+#!/bin/zsh
 code "Partition&Flex/@Partition&Flex.anm"
 for d ($(cat cped.txt)); do
     open "${d}/README.md"
