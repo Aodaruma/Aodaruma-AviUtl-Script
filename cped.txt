@@ -1,5 +1,3 @@
-
-CycleAffect
 簡易Glitch++(派生)
 段付き円形
 平行四辺形
