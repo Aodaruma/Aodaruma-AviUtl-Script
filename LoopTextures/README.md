@@ -3,7 +3,7 @@
 フォルダーに存在する画像を、連番画像のように読み込みループ再生するスクリプトです。
 
 一部機能を使用するのに、rikky氏開発のrikky_moduleが必要になります。
-導入は[ここ]()を参照ください。
+導入は[ここ](https://hazumurhythm.com/wev/amazon/?script=rikkymodulea2Z)を参照ください。
 
 現在は **version 1.01** が最新です。
 
