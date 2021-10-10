@@ -4,8 +4,6 @@
 
 現在は **version 1.01** が最新です。
 
-[![Watch the video](https://img.youtube.com/vi/<--youtube URL here->/maxresdefault.jpg)](https://youtu.be/<--youtube url id here -->)
-
 以下のスクリプトが備わっています。
 
 ## @CycleAffect
@@ -59,5 +57,8 @@
 
 ## 変更履歴 / change log
 
-- v1.11 - 配布をGithubリポジトリーに変更。説明文を変更しました。
-- v1.0 - 
+- v1.01 - 配布をGithubリポジトリーに変更。説明文を変更しました。
+- v1.00 - 正式に配布開始。
+- v0.12 \- Optionsを追加。本体の一部機能をTrackbarに対応した。
+- v0.11 - 適応幅を追加した。特定の角度で発生するバグを修正。
+- v0.10 - 本体を作成。角度ごとに単色化させることに成功した。
