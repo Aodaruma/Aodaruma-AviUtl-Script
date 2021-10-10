@@ -5,6 +5,6 @@ for d ($(cat cped.txt)); do
     find "${d}" -type f -d 1 | grep -v README | xargs code 
     open "${d}"
     read \?"Now: ${d}; press any key when you finish to edit: "
-    sed -i -e "s/${d}//g" cped.txt
+    sed -i -e "s/${d}\n//g" cped.txt
 done
 echo "Done!"
