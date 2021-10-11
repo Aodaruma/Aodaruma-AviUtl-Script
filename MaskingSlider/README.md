@@ -1,26 +1,22 @@
-# Masking Slider (beta)
+# Masking Slider
 
-==概要==
+オブジェクトからマスクを用いて切り出し、円形スライダー状に回転させるスクリプトです。
 
-現在は **version 1.0** が最新です。
-
-[![Watch the video](https://img.youtube.com/vi/<--youtube URL here->/maxresdefault.jpg)](https://youtu.be/<--youtube url id here -->)
+現在は **version 0.11** が最新です。
 
 以下のスクリプトが備わっています。
 
-## @==スクリプトファイル名==
-
-### ==スクリプト名==
-
-==概要==
+## MaskingSlider
 
 以下はパラメーターの説明です。
 
 - **トラックバー/チェックボックス**
-  -
-- **ダイアログ**
-
-  -
+  - マスク数
+    - オブジェクトからマスクへ切り出す数を指定します。
+  - 幅
+    - マスクのライン幅を指定します。
+  - マスクtype
+    - マスクの図形の形を指定します。
 
 ## 導入方法 / how to install
 
@@ -36,5 +32,5 @@
 
 ## 変更履歴 / change log
 
-- v1.11 - 配布を Github リポジトリーに変更。説明文を変更しました。
-- v1.0 -
+- v0.11 - 配布を Github リポジトリーに変更。説明文を変更しました。
+- v0.1 - β版配布。
