@@ -1,14 +1,3 @@
-簡易Glitch++(派生)
-段付き円形
-平行四辺形
-LoopTextures
-WipeClipping
-kerning
-Trackers
-MaskingSlider (bata)
-light&shadow
-キャッシュ保存RM
-3DObject
 対角線クリッピング
 CameraDisplays
 RepeatingClip
@@ -17,7 +6,7 @@ VariableTrack
 UVmapping(beta)
 DelayBuffer
 SphereMaterialTest
-rikky_module_bataModuleScriptSamples
+rikky_module_bata
 ClipFitures
 Repeater
 グラデーションマップ(Re)
