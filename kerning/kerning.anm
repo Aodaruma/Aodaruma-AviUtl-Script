@@ -1,7 +1,7 @@
 --track0:scaleX,-200,500,100
 --track1:scaleY,-200,500,100
 --track3:reset,0,1,0,1
---dialog:Aodaruma_kerning_pos={};
+--dialog:pos,Aodaruma_kerning_pos={};
 
 if type(rikky_module) == "nil" then
     local status, rikky_module = pcall(require, "rikky_module")
@@ -12,6 +12,10 @@ end
 
 local scaleX, scaleY = obj.track0, obj.track1
 if 1 < obj.num and obj.num <= 16 then
+    obj.setanchor("Aodaruma_kerning_pos", obj.num, "line")
+    obj.ox = (Aodaruma_kerning_pos[2 * (obj.index + 1) - 1]) * scaleX
+    obj.oy = (Aodaruma_kerning_pos[2 * (obj.index + 1)]) * scaleY
+
     if obj.track3 == 1 then
         if rikky_module then
             Aodaruma_kerning_savePos = obj.index == 0 and {} or Aodaruma_kerning_savePos
@@ -25,8 +29,4 @@ if 1 < obj.num and obj.num <= 16 then
             obj.load("rikky_module‚ªƒ[ƒh‚Å‚«‚Ü‚¹‚ñ‚Å‚µ‚½B")
         end
     end
-
-    obj.setanchor("Aodaruma_kerning_pos", obj.num, "line")
-    obj.ox = Aodaruma_kerning_pos[2 * (obj.index + 1) - 1]
-    obj.oy = Aodaruma_kerning_pos[2 * (obj.index + 1)]
 end
