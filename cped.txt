@@ -1,8 +1,3 @@
-RepeatingClip
-ImageLoader
-VariableTrack
-UVmapping(beta)
-DelayBuffer
 SphereMaterialTest
 rikky_module_bata
 ClipFitures
