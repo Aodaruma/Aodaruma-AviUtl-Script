@@ -1,15 +1,10 @@
 --[[
-※※※　このスクリプトはベータ版です。このスクリプトを実行することによるいかなる損害について、開発者は責任を負いません。　※※※
+This script is version 0.21. If it is outdated, please replace it with a newer script.
+We are not responsible for any damage caused by the use of this script.
 
-UVmapping - ver.0.01
-
-UVmappingのベータスクリプトです。例外・バグ等あれば、開発者までご報告いただけますと幸いです。
-また、スクリプトは随時更新され、正式リリースすればスクリプト名が「UVmapping」に変更されます。
-ご理解のほどよろしくお願いいたします。
-
-Developed by Aodaruma
-Edited at 1:23 2020/07/06
+developed by Aodaruma (@Aodaruma_)
 ]]
+
 
 
 --------------------------------------------------

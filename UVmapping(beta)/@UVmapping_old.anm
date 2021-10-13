@@ -1,40 +1,10 @@
 --[[
+This script is version 0.21. If it is outdated, please replace it with a newer script.
+We are not responsible for any damage caused by the use of this script.
 
-v1.0
-
-なぜdllで作らなかったのか...
-
-AEのRe:MapプラグインみたいなUVmappingを実現するスクリプトです。
-ただしマップのキーはRGBではなくYCaCbです。
-
-dll一切使ってないので、かなり重いです。
-下手すれば前のpixel sortよりも重たい可能性があります。
-俺のマイスイートPCはCPUゴリラだぜという以外の方は、DLLバージョンが出るまであまりお勧めはできません。
-
-簡単な使い方だけ記しておきます。
-
-------------------------------
-- layer:
-	Mapレイヤーを選択します。-1で直前のレイヤー、0で現在のレイヤー、そのほかの数字はレイヤー数で指定されます。
-- type:
-	1でca,cbがそれぞれx,y、2でca,cbがそれぞれy,xに対応されます。
-- Angle:
-	ピクセル角度が指定できます
-- AF(%):
-	元のピクセルの位置と変化ピクセルの位置の補間を行います。
-------------------------------
-
-質問、バグの発見及び提案に関しては私のTwitterまで連絡よろしくお願いいたします。
-
-version:
-v1.0: 
-	作成
-
-Last Edit: 21:02 2018/09/20
-
-Developed by Aodaruma
-twitter: @Aodaruma_
+developed by Aodaruma (@Aodaruma_)
 ]]
+
 
 --------------------------------------------------------------------------------
 @Map
