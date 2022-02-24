@@ -2,7 +2,9 @@
 * text=auto
 
 # restrict CRLF on .anm/.obj/.tra/.cam
-*.anm text eol=crlf
-*.obj text eol=crlf
-*.tra text eol=crlf
-*.cam text eol=crlf
+*.lua text eol=crlf linguist-language=Lua
+*.obj text eol=crlf linguist-language=Lua
+*.anm text eol=crlf linguist-language=Lua
+*.scn text eol=crlf linguist-language=Lua
+*.cam text eol=crlf linguist-language=Lua
+*.tra text eol=crlf linguist-language=Lua
