@@ -27,11 +27,11 @@
 
 ## 導入方法 / how to install
 
-[上の階層](https://github.com/Aodaruma/Aodaruma-AviUtl-Script)を参照してください。
+[こちらのリポジトリ](https://github.com/Aodaruma/Aodaruma-AviUtl-Script)を参照してください。
 
 ## ライセンス / Licence
 
-[上の階層](https://github.com/Aodaruma/Aodaruma-AviUtl-Script)を参照してください。[ここ](https://github.com/Aodaruma/Aodaruma-AviUtl-Script/blob/main/LICENSE)にも書いてあります。
+[こちらのリポジトリ](https://github.com/Aodaruma/Aodaruma-AviUtl-Script)を参照してください。
 
 ## バグ・意見 / how to report bugs
 
