@@ -6,6 +6,7 @@ AviUtl scripts developed by Aodaruma
 
 - 3Dobject
 - CameraDisplays
+- ClipFigures
 - CycleAffect
 ## インストールの仕方 / how to install
 
