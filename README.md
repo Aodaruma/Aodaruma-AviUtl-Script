@@ -4,25 +4,25 @@ AviUtl scripts developed by Aodaruma
 
 ### 別リポジトリにて配布しているスクリプト
 
-- 3Dobject
-- CameraDisplays
-- ClipFigures
-- CycleAffect
-- DelayBuffer
-- FlatShadow
-- GradationMap(Re)
-- ImageLoader
-- Light&Shadow
-- LoopTextures
-- MaskingSlider
-- Modulator
-- OriginalToon
-- ParallelCamera
-- Partition&Flex
-- PixelSort_A
-- Repeater
-- RepeatingClip
-- RikkyReflection
+- [3Dobject](https://github.com/Aodaruma/3Dobject)
+- [CameraDisplays](https://github.com/Aodaruma/CameraDisplays)
+- [ClipFigures](https://github.com/Aodaruma/ClipFigures)
+- [CycleAffect](https://github.com/Aodaruma/CycleAffect)
+- [DelayBuffer](https://github.com/Aodaruma/DelayBuffer)
+- [FlatShadow](https://github.com/Aodaruma/FlatShadow)
+- [GradationMap(Re)](https://github.com/Aodaruma/GradationMap-Re)
+- [ImageLoader](https://github.com/Aodaruma/ImageLoader)
+- [Light&Shadow](https://github.com/Aodaruma/LightAndShadow)
+- [LoopTextures](https://github.com/Aodaruma/LoopTextures)
+- [MaskingSlider](https://github.com/Aodaruma/MaskingSlider)
+- [Modulator](https://github.com/Aodaruma/Modulator)
+- [OriginalToon](https://github.com/Aodaruma/OriginalToon)
+- [ParallelCamera](https://github.com/Aodaruma/ParallelCamera)
+- [Partition&Flex](https://github.com/Aodaruma/PartitionAndFlex)
+- [PixelSort_A](https://github.com/Aodaruma/PixelSort_A)
+- [Repeater](https://github.com/Aodaruma/Repeater)
+- [RepeatingClip](https://github.com/Aodaruma/RepeatingClip)
+- [RikkyReflection](https://github.com/Aodaruma/RikkyReflection)
 
 ### 本リポジトリのsrc内にて公開しているスクリプト
 - kerning
