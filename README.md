@@ -16,6 +16,7 @@ AviUtl scripts developed by Aodaruma
 - LoopTextures
 - MaskingSlider
 - Modulator
+- OriginalToon
 ## インストールの仕方 / how to install
 
 - 拡張子`.anm`/`.obj`/`.cam`/`.tra`をインストールする場合（スクリプト）
