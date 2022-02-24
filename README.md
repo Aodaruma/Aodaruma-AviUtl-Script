@@ -5,6 +5,7 @@ AviUtl scripts developed by Aodaruma
 ### 別リポジトリにて配布しているスクリプト
 
 - 3Dobject
+- CameraDisplays
 ## インストールの仕方 / how to install
 
 - 拡張子`.anm`/`.obj`/`.cam`/`.tra`をインストールする場合（スクリプト）
