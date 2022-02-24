@@ -20,6 +20,7 @@ AviUtl scripts developed by Aodaruma
 - ParallelCamera
 - Partition&Flex
 - PixelSort_A
+- Repeater
 ## インストールの仕方 / how to install
 
 - 拡張子`.anm`/`.obj`/`.cam`/`.tra`をインストールする場合（スクリプト）
