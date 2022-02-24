@@ -23,6 +23,21 @@ AviUtl scripts developed by Aodaruma
 - Repeater
 - RepeatingClip
 - RikkyReflection
+
+### 本リポジトリのsrc内にて公開しているスクリプト
+- kerning
+- SphereMaterialTest
+- Trackers
+- UVmapping(beta)
+- VariableTrack
+- WipeClipping
+- キャッシュ保存RM
+- 簡易Glitch++(派生)
+- 対角線クリッピング
+- 段付き円形
+- 抜き出し縁取り
+- 平行四辺形
+
 ## インストールの仕方 / how to install
 
 - 拡張子`.anm`/`.obj`/`.cam`/`.tra`をインストールする場合（スクリプト）
