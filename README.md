@@ -18,6 +18,7 @@ AviUtl scripts developed by Aodaruma
 - Modulator
 - OriginalToon
 - ParallelCamera
+- Partition&Flex
 ## インストールの仕方 / how to install
 
 - 拡張子`.anm`/`.obj`/`.cam`/`.tra`をインストールする場合（スクリプト）
