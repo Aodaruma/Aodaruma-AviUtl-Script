@@ -12,6 +12,7 @@ AviUtl scripts developed by Aodaruma
 - FlatShadow
 - GradationMap(Re)
 - ImageLoader
+- Light&Shadow
 ## インストールの仕方 / how to install
 
 - 拡張子`.anm`/`.obj`/`.cam`/`.tra`をインストールする場合（スクリプト）
