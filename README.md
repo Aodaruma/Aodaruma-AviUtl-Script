@@ -9,6 +9,7 @@ AviUtl scripts developed by Aodaruma
 - [ClipFigures](https://github.com/Aodaruma/ClipFigures)
 - [CycleAffect](https://github.com/Aodaruma/CycleAffect)
 - [DelayBuffer](https://github.com/Aodaruma/DelayBuffer)
+- [ExpCircle](https://github.com/Aodaruma/expcircle)
 - [FlatShadow](https://github.com/Aodaruma/FlatShadow)
 - [GradationMap(Re)](https://github.com/Aodaruma/GradationMap-Re)
 - [ImageLoader](https://github.com/Aodaruma/ImageLoader)
