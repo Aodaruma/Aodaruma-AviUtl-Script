@@ -41,7 +41,7 @@ AviUtl scripts developed by Aodaruma
 ## インストールの仕方 / how to install
 
 ファイルの種類・拡張子によって導入方法が異なります。
-こちらにて随時情報が更新されていますので、具体的なインストール方法はこちらを参照してください。
+こちらのウェブサイトでは、随時情報が更新されていますので、具体的なインストール方法はこちらを参照してください。
 
 - [scrapbox.io/AviUtl/スクリプトの導入方法](https://scrapbox.io/aviutl/スクリプトの導入方法)
 - [scrapbox.io/AviUtl/プラグインの導入方法](https://scrapbox.io/aviutl/プラグインの導入方法)
