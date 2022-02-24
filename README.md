@@ -9,6 +9,7 @@ AviUtl scripts developed by Aodaruma
 - ClipFigures
 - CycleAffect
 - DelayBuffer
+- FlatShadow
 ## インストールの仕方 / how to install
 
 - 拡張子`.anm`/`.obj`/`.cam`/`.tra`をインストールする場合（スクリプト）
