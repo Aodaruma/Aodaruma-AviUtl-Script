@@ -15,6 +15,7 @@ AviUtl scripts developed by Aodaruma
 - Light&Shadow
 - LoopTextures
 - MaskingSlider
+- Modulator
 ## インストールの仕方 / how to install
 
 - 拡張子`.anm`/`.obj`/`.cam`/`.tra`をインストールする場合（スクリプト）
