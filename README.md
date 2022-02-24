@@ -1,8 +1,10 @@
 # Aodaruma's AviUtl Script
 Aodarumaが開発したAviUtlスクリプト群です。
-
 AviUtl scripts developed by Aodaruma
 
+### 別リポジトリにて配布しているスクリプト
+
+- 3Dobject
 ## インストールの仕方 / how to install
 
 - 拡張子`.anm`/`.obj`/`.cam`/`.tra`をインストールする場合（スクリプト）
