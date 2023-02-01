@@ -24,6 +24,8 @@ AviUtl scripts developed by Aodaruma
 - [Repeater](https://github.com/Aodaruma/Repeater)
 - [RepeatingClip](https://github.com/Aodaruma/RepeatingClip)
 - [RikkyReflection](https://github.com/Aodaruma/RikkyReflection)
+- [ChangeColor](https://github.com/Aodaruma/change-color)
+- [AutoScaleCropping](https://github.com/Aodaruma/AutoCropScaling)
 
 ### 本リポジトリのsrc内にて公開しているスクリプト
 - kerning
