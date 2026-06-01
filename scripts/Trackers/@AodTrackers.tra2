@@ -1,0 +1,33 @@
+--script:lua
+--[[
+This script is version 1.01. If it is outdated, please replace it with a newer script.
+We are not responsible for any damage caused by the use of this script.
+
+developed by Aodaruma (@Aodaruma_)
+]]
+
+@Randamize(%)
+--twopoint:
+--param:50
+
+local g = obj.getpoint
+local left, right = g(0), g(1)
+local i,n = g("link")
+local per = g("param")*10
+
+local r = obj.rand(0,1000,obj.frame+obj.totalframe*obj.index,i)
+
+return r <= per and left or right
+
+
+-------------------------------------
+@Skipping(%)
+--param:20
+
+local p,n=obj.getpoint("param")/100,obj.getpoint("num")
+local i,af = math.modf(obj.getpoint("index"))
+local gp1,gp2=obj.getpoint(i),obj.getpoint(i+1)
+
+return gp1 +(gp2-gp1)*af*(1-p)
+
+-------------------------------------

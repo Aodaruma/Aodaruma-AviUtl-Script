@@ -44,6 +44,30 @@ AviUtl scripts developed by Aodaruma
 -   抜き出し縁取り
 -   平行四辺形
 
+## AviUtl2 対応状況（暫定）
+
+### step1: AviUtl2 版ファイルを追加（2026-05-11）
+
+以下は `.anm2` / `.tra2` を追加し、AviUtl2 で読み込める形にしたものです。
+
+-   `scripts/簡易Glitch++(派生)/簡易Glitch++(派生).anm2`
+-   `scripts/段付き円形/段付き円形.anm2`
+-   `scripts/VariableTrack/VariableTrack.anm2`
+-   `scripts/平行四辺形/平行四辺形.anm2`
+-   `scripts/対角線クリッピング/対角線クリッピング.anm2`
+-   `scripts/WipeClipping/@WipeClipping.anm2`
+-   `scripts/Trackers/@AodTrackers.tra2`
+
+### 未対応（step2 以降）
+
+以下は外部依存（`require("rikky_module")` や DLL）を含むため、単純な拡張子変換では対応できません。
+
+-   `SphereMaterialTest`
+-   `キャッシュ保存RM`
+-   `抜き出し縁取り`
+-   `UVmapping(beta)/@UVmapping_tester.anm` + `UVmapping.dll`
+-   `kerning`（`rikky_module` を利用する機能あり）
+
 ## インストールの仕方 / how to install
 
 ファイルの種類・拡張子によって導入方法が異なります。
